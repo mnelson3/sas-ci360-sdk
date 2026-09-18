@@ -1,0 +1,11 @@
+pandas>=2.0.0
+PyJWT>=2.0.0
+requests>=2.31.0
+saspy>=5.0.0
+schedule>=1.1.0
+DateTime>=4.3
+urllib3>=2.0.0
+
+# sasci360apidigitalassets and sasci360apicore are internal SAS CI360 API
+# packages, not published on public PyPI. Install them from your SAS CI360
+# environment's package source before using this module.
