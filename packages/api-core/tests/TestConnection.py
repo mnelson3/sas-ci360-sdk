@@ -2,6 +2,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import unittest
+from unittest.mock import MagicMock, patch
 
 from sasci360apicore import connection
 from sasci360apicore import encryption
@@ -40,7 +41,9 @@ class TestConnection(unittest.TestCase):
 	def test_delete(self):
 		pass
 
-	def test_get(self):
+	@patch("requests.get")
+	def test_get(self, mock_get):
+		mock_get.return_value = MagicMock(status_code=200)
 		algorithm = self.algorithm
 		encoding = self.encoding
 		secret_key = self.secret_key_dev
@@ -92,7 +95,9 @@ class TestConnection(unittest.TestCase):
 	def test_patch(self):
 		pass
 
-	def test_post(self):
+	@patch("requests.post")
+	def test_post(self, mock_post):
+		mock_post.return_value = MagicMock(status_code=200)
 		secret_key = self.secret_key_dev
 		print("secret_key : {0}".format(secret_key))
 		tenant_id = self.tenant_id_dev
