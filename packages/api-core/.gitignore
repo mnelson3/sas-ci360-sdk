@@ -1,0 +1,17 @@
+.idea
+.pytest_cache
+.vscode
+/venv
+__pycache__/
+*.pyc
+.DS_Store
+
+# Build artifacts
+/build/
+/dist/
+*.egg-info/
+/docs/build/
+
+# Local runtime output / secrets
+/logs/*
+/config/
