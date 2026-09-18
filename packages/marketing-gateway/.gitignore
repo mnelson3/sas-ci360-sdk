@@ -1,0 +1,20 @@
+.idea
+.pytest_cache
+.vscode
+/.idea
+/.pytest_cache
+/.vscode
+/logs/*
+/venv
+__pycache__
+
+# OS files
+.DS_Store
+
+# Build artifacts
+*.egg-info/
+/dist/
+/build/
+
+# Downloaded agent SDKs (fetched via the API, not source)
+/downloads/
