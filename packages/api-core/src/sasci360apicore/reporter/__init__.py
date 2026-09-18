@@ -37,6 +37,7 @@ class Reporter:
 			name = kwargs["name"]
 			data = kwargs["data"]
 			json_file = Path("{0}{1}{2}{3}".format(root, folder, name, ".JSON"))
+			json_file.parent.mkdir(parents=True, exist_ok=True)
 			with open(json_file, "w", encoding="utf-8") as outfile:
 				json.dump(data, outfile, ensure_ascii=False, indent=4)
 		except (AttributeError, Exception) as e:
