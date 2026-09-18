@@ -1,9 +1,8 @@
-pandas~=1.4.2
-PyJWT~=2.3.0
-requests~=2.27.1
-saspy~=4.2.0
-schedule~=1.1.0
-DateTime~=4.3
-sasci360apimarketinggateway~=0.0.1
-sasci360apicore~=0.0.1
-urllib3~=1.26.9
+pandas>=2.0.0
+PyJWT>=2.3.0
+requests>=2.27.1
+saspy>=4.2.0
+schedule>=1.1.0
+DateTime>=4.3
+sasci360apicore @ git+https://github.com/mnelson3/sas_ci360_api_core.git@main
+urllib3>=1.26.9
