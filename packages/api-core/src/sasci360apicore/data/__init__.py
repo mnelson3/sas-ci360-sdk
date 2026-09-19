@@ -52,10 +52,9 @@ class Data:
 					except IOError as e:
 						error = error + 1
 						error_msg = error_msg + "\nerror in row: " + str(rows) + " - " + str(e)
-		except (AttributeError, Exception) as e:
+		except (KeyError, OSError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		return result
 
 	def create_sas_dataset(self, **kwargs) -> saspy.SASdata:
 		"""
@@ -80,10 +79,9 @@ class Data:
 
 			for key in dataframe_collection.keys():
 				result = s.df2sd(df=dataframe_collection[key], table=key, keep_outer_quotes=False)
-		except (AttributeError, Exception) as e:
+		except (KeyError, OSError, saspy.SASConfigNotFoundError, saspy.SASConfigNotValidError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		return result
 
 	def get_schema(self, **kwargs):
 		"""
@@ -119,10 +117,9 @@ class Data:
 
 			# remove last delimiter and return line
 			result = column_header[:-len(delimiter)]
-		except (AttributeError, Exception) as e:
+		except (KeyError, json.JSONDecodeError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		return result
 
 
 if __name__ == "__main__":

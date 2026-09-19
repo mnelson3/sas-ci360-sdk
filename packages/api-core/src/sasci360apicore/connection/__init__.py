@@ -3,6 +3,7 @@
 
 import logging
 import time
+
 import requests
 
 
@@ -10,13 +11,13 @@ class Connection:
 	"""
 	Connection Module
 	Contains operations to connect to REST APIs
-		1. def connect(self, **kwargs) -> requests.Response
+		1. def connect(self, **kwargs) -> dict | int | bytes | None
 	"""
 
 	def __init__(self) -> None:
 		self.logger = logging.getLogger(__name__)
 
-	def connect(self, **kwargs) -> requests.Response:
+	def connect(self, **kwargs):
 		"""
 		Connect
 		:keywords action: str, required - method of operation to perform (DELETE, GET, PATCH, POST, PUT)
@@ -24,8 +25,8 @@ class Connection:
 		:keywords headers: dict, required - an HTTP header that can be used in an HTTP request to provide information about the request context, so that the server can tailor the response
 		:keywords params: str, optional - GET-style URL parameters, currently not implemented
 		:keywords url: str, required - the web resource to access via HTTP(S) for the REST APIs
-		:return: Returns requests.Response object
-		:rtype: requests.Response
+		:return: the parsed JSON body, or the response's raw bytes when the body isn't JSON, or
+			the status code for a PUT (signed-URL uploads typically return an empty body)
 		"""
 		result = None
 		try:
@@ -64,19 +65,20 @@ class Connection:
 				counter += 1
 				code = int(r.status_code)
 			if 200 <= code <= 299:
-				# 	if action == "PUT":
-				# 		result = code
-				# 	elif headers == "application/zip":
-				# 		result = response.content
-				# 	else:
-				# 		result = response.json()
-				# else:
-				result = r
+				if action == "PUT":
+					result = code
+				else:
+					try:
+						result = r.json()
+					except ValueError:
+						result = r.content
 			r.close()
-		except (AttributeError, Exception) as e:
+		except (requests.exceptions.RequestException, OSError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		except AttributeError as e:
+			# r stays None when action doesn't match a handled HTTP verb.
+			self.logger.exception("Exception occurred: {}".format(str(e)))
+		return result
 
 
 if __name__ == "__main__":

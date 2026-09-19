@@ -109,10 +109,8 @@ class Communication:
 				server.login(login, password)
 				server.sendmail(email_msg_from, email_msg_to, text)
 			server.close()
-		except (AttributeError, Exception) as e:
+		except (smtplib.SMTPException, OSError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return
 
 
 if __name__ == "__main__":

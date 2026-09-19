@@ -19,10 +19,9 @@ class Logger:
 			handler.setLevel(logging.INFO)
 
 			self.logger.addHandler(handler)
-		except (AttributeError, Exception) as e:
+		except OSError as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return self.logger
+		return self.logger
 
 
 if __name__ == "__main__":
