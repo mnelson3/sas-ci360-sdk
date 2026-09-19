@@ -15,6 +15,8 @@ __pycache__
 *.egg-info/
 /dist/
 /build/
+.coverage
+coverage.xml
 
 # Downloaded agent SDKs (fetched via the API, not source)
 /downloads/

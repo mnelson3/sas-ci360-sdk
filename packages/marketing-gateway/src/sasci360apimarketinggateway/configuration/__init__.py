@@ -21,25 +21,19 @@ class Configuration(Base):
 		:return: Returns the configuration settings that are related to your access type.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "GET"
-			data = None
-			headers = {
-				"Content-Type": "application/json",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/configuration"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "GET"
+		data = None
+		headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/configuration"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 
 if __name__ == "__main__":

@@ -23,25 +23,19 @@ class Events(Base):
 		:return: Submits a request to upload a file with external events. When you send this request with the appropriate JSON body, the response includes a signed, temporary URL. Use this URL to upload a bulk events file.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "POST"
-			data = payload
-			headers = {
-				"Content-Type": "application/json",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/bulkEventsFileLocation"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "POST"
+		data = payload
+		headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/bulkEventsFileLocation"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 	def create_external_event(self, payload: dict) -> requests.Response:
 		"""
@@ -50,25 +44,19 @@ class Events(Base):
 		:return: Inject an external event into SAS Customer Intelligence 360. Define the external event in the JSON body of the request.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "POST"
-			data = payload
-			headers = {
-				"Content-Type": "application/json",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/events"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "POST"
+		data = payload
+		headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/events"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 
 if __name__ == "__main__":

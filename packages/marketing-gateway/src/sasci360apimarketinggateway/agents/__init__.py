@@ -24,25 +24,19 @@ class Agents(Base):
 		:return: Download the .zip file that contains the Diagnostics agent.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "GET"
-			data = None
-			headers = {
-				"Content-Type": "application/zip",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/diag"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "GET"
+		data = None
+		headers = {
+			"Content-Type": "application/zip",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/diag"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 	def get_direct_agent(self) -> requests.Response:
 		"""
@@ -50,25 +44,19 @@ class Agents(Base):
 		:return: Download the .zip file that contains the Direct agent.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "GET"
-			data = None
-			headers = {
-				"Content-Type": "application/zip",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/satellite"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "GET"
+		data = None
+		headers = {
+			"Content-Type": "application/zip",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/satellite"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 	def get_general_agent(self) -> requests.Response:
 		"""
@@ -76,25 +64,19 @@ class Agents(Base):
 		:return: Download the .zip file that contains the General agent and the SDK for the on-premises agents.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "GET"
-			data = None
-			headers = {
-				"Content-Type": "application/zip",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/agent"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "GET"
+		data = None
+		headers = {
+			"Content-Type": "application/zip",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/agent"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 	def get_optimize_agent(self) -> requests.Response:
 		"""
@@ -102,25 +84,19 @@ class Agents(Base):
 		:return: Download the .zip file that contains the Optimize agent.
 		:rtype: requests.Response
 		"""
-		result = None
 		token = self.token
 		api = self.api
 		host = self.host
-		try:
-			action = "GET"
-			data = None
-			headers = {
-				"Content-Type": "application/zip",
-				"Authorization": "Bearer {0}".format(token)
-			}
-			params = None
-			api_path = "/optimize"
-			url = "https://{0}{1}{2}".format(host, api, api_path)
-			result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
-		except (AttributeError, Exception) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		action = "GET"
+		data = None
+		headers = {
+			"Content-Type": "application/zip",
+			"Authorization": "Bearer {0}".format(token)
+		}
+		params = None
+		api_path = "/optimize"
+		url = "https://{0}{1}{2}".format(host, api, api_path)
+		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
 
 if __name__ == "__main__":

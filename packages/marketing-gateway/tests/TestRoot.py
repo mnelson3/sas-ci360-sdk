@@ -8,38 +8,45 @@ Contains the operations for this root resource
 """
 
 import unittest
+from unittest.mock import MagicMock, patch
+
 from sasci360apimarketinggateway import root
 
 
 class TestRoot(unittest.TestCase):
 
 	def setUp(self) -> None:
-		algorithm = "HS256"
-		api = "/marketingGateway"
-		encoding = "UTF-8"
-		host = "YOUR_TENANT_HOST"
-		secret_key = "YOUR_SECRET_KEY"
-		tenant_id = "YOUR_TENANT_ID"
+		self.algorithm = "HS256"
+		self.api = "/marketingGateway"
+		self.encoding = "UTF-8"
+		self.host = "example.api.gateway.invalid"
+		self.secret_key = "example-secret-key"
+		self.tenant_id = "example-tenant-id"
 
 		self.root = root.Root(
-			algorithm=algorithm,
-			api=api,
-			encoding=encoding,
-			host=host,
-			secret_key=secret_key,
-			tenant_id=tenant_id
+			algorithm=self.algorithm,
+			api=self.api,
+			encoding=self.encoding,
+			host=self.host,
+			secret_key=self.secret_key,
+			tenant_id=self.tenant_id
 		)
 
-	def test_get_root(self):
+	@patch("requests.get")
+	def test_get_root(self, mock_get):
 		"""
 		1. get_root(self) -> requests.Response
 		"""
+		mock_get.return_value = MagicMock(status_code=200, json=lambda: {"links": []})
+
 		result = self.root.get_root()
-		print("Result: {}".format(result))
-		print("Result: {}".format(result.status_code))
-		print("Result: {}".format(result.json()))
-		print("Result: {}".format(result.content))
+
 		self.assertIsNotNone(result)
+		self.assertEqual(result, {"links": []})
+		called_kwargs = mock_get.call_args.kwargs
+		self.assertEqual(called_kwargs["url"], "https://{0}{1}/".format(self.host, self.api))
+		self.assertEqual(called_kwargs["headers"]["Content-Type"], "application/json")
+		self.assertTrue(called_kwargs["headers"]["Authorization"].startswith("Bearer "))
 
 
 if __name__ == "__main__":
