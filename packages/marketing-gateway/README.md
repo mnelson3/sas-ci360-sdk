@@ -2,6 +2,8 @@
 
 ## SAS 360 API MARKETING GATEWAY LIBRARY
 
+> **Status: canonical.** This is the actively maintained client for the Marketing Gateway API (Discover data downloads). No newer `sol-*` equivalent exists yet.
+
 ### Overview
 
 The Marketing Gateway API provides access to a variety of features in SAS Customer Intelligence 360. You can use this API to perform tasks like downloading data records and injecting external events.
