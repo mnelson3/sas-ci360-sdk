@@ -52,12 +52,9 @@ class Listener:
 					if Path.exists(file_export_chain_path):
 						os.remove(source_file_path)
 
-					# custom_upload_data = UploadIdentityBridgeData.UploadIdentityBridgeData(mode=self.__mode)  # custom_upload_data.run(file_name=file_export_chain_path)  # time.sleep(7200)  # custom_create_reports = CreateIdentityBridgeReports.CreateIdentityBridgeReports(mode=self.__mode)  # custom_create_reports.run(time_stamp=time_stamp_)  # custom_send_status_message = SendIdentityBridgeStatusMessage.SendIdentityBridgeStatusMessage(mode=self.__mode)  # custom_send_status_message.run(time_stamp=time_stamp_)
 				time.sleep(sleep)
-		except (AttributeError, Exception) as e:
+		except OSError as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return
 
 
 if __name__ == "__main__":

@@ -40,10 +40,9 @@ class Reporter:
 			json_file.parent.mkdir(parents=True, exist_ok=True)
 			with open(json_file, "w", encoding="utf-8") as outfile:
 				json.dump(data, outfile, ensure_ascii=False, indent=4)
-		except (AttributeError, Exception) as e:
+		except (KeyError, OSError, TypeError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return json_file
+		return json_file
 
 
 if __name__ == "__main__":

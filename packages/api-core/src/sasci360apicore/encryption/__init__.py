@@ -3,6 +3,7 @@
 
 import base64
 import logging
+
 import jwt
 
 
@@ -45,10 +46,9 @@ class Encryption:
 			secret_key_encoded = base64.b64encode(secret_key_bytes)
 			token = jwt.encode(payload=payload, key=secret_key_encoded, algorithm=algorithm)
 			result = token
-		except (AttributeError, Exception) as e:
+		except (KeyError, TypeError, LookupError, jwt.PyJWTError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
-			return result
+		return result
 
 
 if __name__ == "__main__":

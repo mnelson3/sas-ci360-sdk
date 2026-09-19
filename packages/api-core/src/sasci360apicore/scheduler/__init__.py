@@ -3,7 +3,8 @@
 
 import logging
 import time
-from schedule import every, run_pending
+
+from schedule import ScheduleError, every, run_pending
 
 
 class Scheduler:
@@ -33,14 +34,14 @@ class Scheduler:
 		"""
 
 		"""
-		try:
-			sleep_seconds = self.sleep
-			schedule_job = self.object
-			minute = self.minute
-			hour = self.hour
-			day = self.day
-			program_time = "{0}:{1}".format(hour, minute)
+		sleep_seconds = self.sleep
+		schedule_job = self.object
+		minute = self.minute
+		hour = self.hour
+		day = self.day
+		program_time = "{0}:{1}".format(hour, minute)
 
+		try:
 			if day == "monday":
 				every().monday.at(program_time).do(job_func=schedule_job)
 			elif day == "tuesday":
@@ -57,14 +58,18 @@ class Scheduler:
 				every().sunday.at(program_time).do(job_func=schedule_job)
 			else:
 				every().day.at(program_time).do(job_func=schedule_job)
-
-			while True:
-				run_pending()
-				time.sleep(sleep_seconds)
-		except (AttributeError, Exception) as e:
+		except (ScheduleError, TypeError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
-		finally:
 			return
+
+		while True:
+			try:
+				run_pending()
+			except Exception as e:
+				# Broad on purpose: schedule_job is caller-supplied and can fail in
+				# arbitrary ways. One bad run must not take the whole scheduler down.
+				self.logger.exception("Exception occurred: {}".format(str(e)))
+			time.sleep(sleep_seconds)
 
 
 if __name__ == "__main__":
