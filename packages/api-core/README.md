@@ -2,6 +2,8 @@
 
 ## SAS 360 API CORE LIBRARY
 
+> **Status: canonical.** This is the shared authentication/transport library every other client in the family depends on.
+
 ### Overview
 
 Foundational Python Library for building solutions against the SAS Customer Intelligence 360 REST API Collection.
