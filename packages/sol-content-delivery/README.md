@@ -2,6 +2,8 @@
 
 ## SAS 360 SOLUTIONS - Content Delivery Module
 
+> **Status: canonical.** This is the actively maintained client for the Digital Assets API.
+
 This repository provides Python interfaces for SAS Customer Intelligence 360 Digital Assets and Content Delivery APIs.
 
 ### Overview
