@@ -10,22 +10,22 @@
 
 | ID | Requirement | Class / method |
 | --- | --- | --- |
-| MARKETINGGATEWAY-FR-1 | Get the API's top-level resource links. | `root.Root.get_root()` |
-| MARKETINGGATEWAY-FR-2 | Download Discover base/detail/identity/reprocessed data-mart tables, with delta and time-range filtering via kwargs. | `data_download.DataDownload.get_base_tables()`, `.get_detail_tables()`, `.get_identity_tables()`, `.get_reprocessed_tables()` |
-| MARKETINGGATEWAY-FR-3 | Inject a single external event or a bulk batch of events. | `events.Events.create_external_event(payload)`, `.create_bulk_events(payload)` |
-| MARKETINGGATEWAY-FR-4 | Get the diagnostics, direct, general, and optimize agent configurations. | `agents.Agents.get_diagnostics_agent()`, `.get_direct_agent()`, `.get_general_agent()`, `.get_optimize_agent()` |
-| MARKETINGGATEWAY-FR-5 | Get gateway configuration. | `configuration.Configuration.get_configuration()` |
+| `MARKETINGGATEWAY-FR-1` | Get the API's top-level resource links. | `root.Root.get_root()` |
+| `MARKETINGGATEWAY-FR-2` | Download Discover base/detail/identity/reprocessed data-mart tables, with delta and time-range filtering via kwargs. | `data_download.DataDownload.get_base_tables()`, `.get_detail_tables()`, `.get_identity_tables()`, `.get_reprocessed_tables()` |
+| `MARKETINGGATEWAY-FR-3` | Inject a single external event or a bulk batch of events. | `events.Events.create_external_event(payload)`, `.create_bulk_events(payload)` |
+| `MARKETINGGATEWAY-FR-4` | Get the diagnostics, direct, general, and optimize agent configurations. | `agents.Agents.get_diagnostics_agent()`, `.get_direct_agent()`, `.get_general_agent()`, `.get_optimize_agent()` |
+| `MARKETINGGATEWAY-FR-5` | Get gateway configuration. | `configuration.Configuration.get_configuration()` |
 
 Each class constructs independently from `(algorithm, api, encoding, host, secret_key, tenant_id)` — there's no single `MarketingGatewayBase` all five share; each is its own `Base` subclass. `api` is typically `/marketingGateway` but is passed explicitly rather than defaulted, since this generation predates the `api_base`-as-config-field convention.
 
 ## 2. Non-functional requirements
 
-Inherits MARKETINGGATEWAY-NFR-1 through MARKETINGGATEWAY-NFR-8 from [sas-ci360-sdk/docs/TRD.md](../../../docs/TRD.md). Status specific to this package as of 2026-09-20:
+Inherits `MARKETINGGATEWAY-NFR-1` through `MARKETINGGATEWAY-NFR-8` from [sas-ci360-sdk/docs/TRD.md](../../../docs/TRD.md). Status specific to this package as of 2026-09-20:
 
 | ID | Status |
 | --- | --- |
-| MARKETINGGATEWAY-NFR-8 (Packaging hygiene) | **Real bug found and fixed**: same malformed `[install_requires]` section as `api-core` (silently ignored by setuptools — a bare `pip install` installed zero dependencies). Fixed, and the stale 2022-era version pins updated to match `requirements.txt`. |
-| MARKETINGGATEWAY-NFR-4 (Testability) | This package's tests mock `requests.get`/`requests.post` directly (predates the `Session`-object pattern the `sol-*` packages use) — a different but equally valid mocking boundary, since it's still below this package's own request-construction logic, not above it. |
+| `MARKETINGGATEWAY-NFR-8` (Packaging hygiene) | **Real bug found and fixed**: same malformed `[install_requires]` section as `api-core` (silently ignored by setuptools — a bare `pip install` installed zero dependencies). Fixed, and the stale 2022-era version pins updated to match `requirements.txt`. |
+| `MARKETINGGATEWAY-NFR-4` (Testability) | This package's tests mock `requests.get`/`requests.post` directly (predates the `Session`-object pattern the `sol-*` packages use) — a different but equally valid mocking boundary, since it's still below this package's own request-construction logic, not above it. |
 
 ## 3. Data requirements
 
@@ -37,7 +37,7 @@ Same as `api-core` — `requests`, `PyJWT`, `pandas`, `saspy`, `schedule`, `Date
 
 ## 5. Dependency policy
 
-See MARKETINGGATEWAY-NFR-8 above.
+See `MARKETINGGATEWAY-NFR-8` above.
 
 ## 6. Testing strategy
 
