@@ -249,7 +249,7 @@ class CI360ExecuteBase:
                 raise CI360ExecuteConnectionError("No active connection to CI360 service")
 
         host = self.config.host or ""
-        url = urljoin(host + self.config.api_base, endpoint.lstrip('/'))
+        url = f"{host.rstrip('/')}{self.config.api_base}/{endpoint.lstrip('/')}"
         headers = self.get_auth_headers()
 
         try:

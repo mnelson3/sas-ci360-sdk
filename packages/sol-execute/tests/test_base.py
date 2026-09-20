@@ -324,6 +324,37 @@ class TestCI360ExecuteErrorHandling(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             asyncio.run(client.execute_campaign_async("camp-123"))
 
+    # URL construction test
+    #
+    # Every test above mocks _make_request_async itself, so none of them
+    # ever exercise the URL it builds. That let a real bug through:
+    # urljoin(host + api_base, endpoint) silently drops api_base, because
+    # urljoin treats a base URL with no trailing slash as a document to
+    # replace rather than a directory to extend under RFC 3986 relative
+    # reference resolution (same bug already fixed in sol-planning,
+    # sol-content-delivery, and sol-data). This test mocks one level
+    # deeper (the session's own .request call) to pin down the actual
+    # URL requested.
+
+    @patch('sasci360solexecute.base.requests.Session')
+    @patch('sasci360solexecute.base.Encryption')
+    def test_make_request_async_includes_api_base_in_url(self, mock_encryption_class, mock_session_class):
+        """_make_request_async must build a URL under config.api_base, not just config.host."""
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_response = Mock()
+        mock_response.content = b'{"ok": true}'
+        mock_response.json.return_value = {"ok": True}
+        mock_response.raise_for_status.return_value = None
+        mock_session_class.return_value.request.return_value = mock_response
+
+        client = CI360ExecuteBase(self.config)
+        client._connected = True
+
+        asyncio.run(client._make_request_async("GET", "/campaigns"))
+
+        called_url = mock_session_class.return_value.request.call_args.kwargs["url"]
+        self.assertEqual(called_url, "https://api.example.com/marketingExecution/campaigns")
+
 
 if __name__ == '__main__':
     unittest.main()
