@@ -29,7 +29,7 @@ from urllib3.util.retry import Retry
 
 try:
     from sasci360apicore.encryption import Encryption
-except ImportError:
+except ImportError:  # pragma: no cover - optional dependency, only needed at runtime
     Encryption = None
 
 
