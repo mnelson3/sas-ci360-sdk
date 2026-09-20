@@ -1,43 +1,45 @@
-# SAS CI360 Sol Execute
+# SAS Customer Intelligence 360
 
-## Python client for SAS Customer Intelligence 360 Marketing Execution APIs
+## SAS 360 SOLUTIONS - Execute Module
 
 > **Status: canonical.** This is the actively maintained client for the Marketing Execution API.
 
-This repository provides Python interfaces for SAS Customer Intelligence 360 Marketing Execution APIs.
-
-> This is an independent client library and is not an official SAS product. "SAS" and "Customer Intelligence 360" are trademarks of SAS Institute Inc.; this project is not affiliated with or endorsed by SAS Institute.
+This is an independent, third-party client library maintained by Nelson Grey LLC. It is not affiliated with or endorsed by SAS Institute.
 
 ### Overview
 
-The Execute module enables programmatic campaign execution, message sending, and marketing automation within the CI360 platform.
+The Execute module provides `CI360ExecuteBase`, a REST client for CI360's Marketing Execution API — campaign execution, batch jobs, job scheduling, and execution metrics — with both synchronous and asynchronous methods for every operation.
 
 ### Features
 
-- Campaign execution and management
-- Batch job submission and monitoring
-- Job scheduling
-- Execution monitoring and reporting
-- Sync and async APIs for every operation
+- JWT-based authentication
+- Synchronous and asynchronous HTTP methods for every API operation
+- Automatic retries with backoff for transient failures (429/5xx)
+- Campaign execution, execution status, and cancellation
+- Batch job submission, status, and cancellation
+- Job scheduling (create, list, update, delete)
+- Execution metrics
+- Typed exception hierarchy for auth, connection, and validation errors
 
 ### Prerequisites
 
 - Python 3.8+
-- Access to a SAS Customer Intelligence 360 environment
-- `sasci360apicore` and `sasci360apimarketingexecution` — SAS-internal packages required at runtime for authentication and API access. These are not published on public PyPI; obtain them from your SAS CI360 environment/administrator. See [requirements.txt](requirements.txt) for the full dependency list.
+- Access to a SAS Customer Intelligence 360 environment (host, tenant ID, and a shared secret or key configured for JWT signing)
+
+This package depends on `sasci360apicore` from this same monorepo (pulled automatically via `requirements.txt`, no separate install or SAS administrator access needed) for JWT generation and retry-enabled HTTP transport.
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mnelson3/sas-ci360-sol-execute.git
-   cd sas-ci360-sol-execute
-   ```
+This package lives in the `sas-ci360-sdk` monorepo:
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/mnelson3/sas-ci360-sdk.git
+cd sas-ci360-sdk/packages/sol-execute
+pip install -r requirements.txt
+pip install -e .
+```
+
+Installing this package alone does not pull in any other package's dependencies (Workflow, SCIM, etc.).
 
 ### Getting Started
 
@@ -47,300 +49,168 @@ from sasci360solexecute.base import CI360ExecuteBase, CI360ExecuteConfig
 config = CI360ExecuteConfig(
     host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
+    tenant_id="your-tenant-id",
 )
 
 client = CI360ExecuteBase(config)
 
-# Execute campaigns programmatically
-result = client.execute_campaign("campaign-id")
+status = client.get_execution_status("execution-123")
 ```
-
-### Solutions Code
-
-The execute module provides:
-
-1. **Campaign Execution**: Launch, monitor, and cancel campaign executions
-2. **Batch Processing**: Submit, monitor, and cancel batch jobs
-3. **Job Scheduling**: Create, list, update, and delete scheduled jobs
-4. **Execution Monitoring**: Track campaign performance metrics
 
 ### Troubleshooting
 
-- Verify campaign configurations
-- Check execution permissions
-- Monitor API rate limits
-- Review execution logs
+- Verify `host`, `secret_key`, and `tenant_id` are set correctly on `CI360ExecuteConfig` — these are required and initialization raises `CI360ExecuteValidationError` if any are missing.
+- `host` must include the `https://` scheme for this package.
+- Check `CI360ExecuteAuthError` / `CI360ExecuteConnectionError` messages for authentication vs. network failures.
+- Enable `logging` at `INFO` level or below on the `sasci360solexecute.base.CI360ExecuteBase` logger to see connection and request activity.
 
-## 🛠️ Developer/Implementation Guide
+## Developer/Implementation Guide
 
-This section provides comprehensive guidance for developers implementing campaign execution solutions with SAS CI360.
+### Configuration
 
-### Architecture Overview
+`CI360ExecuteConfig` is a dataclass holding connection and behavior settings:
 
-The SAS CI360 Execute module follows a workflow-driven architecture designed for scalable marketing execution:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Execute Module                            │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ Campaign    │ │ Batch       │ │ Job         │           │
-│  │ Execution   │ │ Processing  │ │ Scheduling  │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ REST API    │ │ JWT Auth    │ │ Async I/O   │           │
-│  │ Client      │ │ & Security  │ │ Operations  │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Core Components
-
-1. **Campaign Execution Layer**
-   - `CI360ExecuteBase`: Core client class for all operations below
-   - Campaign lifecycle management (execute, monitor status, cancel)
-   - Execution metrics and reporting
-
-2. **Batch Processing Layer**
-   - Batch job submission and status tracking
-   - Job listing with pagination and status filtering
-   - Batch job cancellation
-
-3. **Job Scheduling Layer**
-   - Create and manage scheduled jobs
-   - Update or delete existing schedules
-   - List active/inactive schedules
-
-### Configuration Management
-
-#### Environment Variables
-```bash
-export SAS_CI360_SECRET_KEY="your-secret-key"
-export SAS_CI360_TENANT_ID="your-tenant-id"
-```
-
-#### Configuration Class
 ```python
 from sasci360solexecute.base import CI360ExecuteConfig
 
 config = CI360ExecuteConfig(
-    algorithm="HS256",
+    algorithm="HS256",          # JWT signing algorithm
+    api_base="/marketingExecution",
     encoding="utf-8",
-    host="your-ci360-host.sas.com",
-    secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
-)
-```
-
-### API Integration Patterns
-
-#### Campaign Execution
-```python
-from sasci360solexecute.base import CI360ExecuteBase, CI360ExecuteConfig
-
-client = CI360ExecuteBase(CI360ExecuteConfig(
     host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
-))
-
-result = client.execute_campaign(
-    campaign_id="summer-promo-2024",
-    execution_params={"priority": "high"}
+    tenant_id="your-tenant-id",
+    timeout=30,                 # per-request timeout, seconds
+    max_retries=3,
+    retry_backoff=0.5,
+    enable_compression=True,
+    batch_size=1000,
+    max_concurrent_jobs=10,
+    job_timeout=3600,
 )
-print(f"Execution started: {result['executionId']}")
 ```
 
-#### Asynchronous Operations
+`host`, `secret_key`, and `tenant_id` are required; the client raises `CI360ExecuteValidationError` on construction if any are missing.
+
+### Authentication
+
+`CI360ExecuteBase` generates a JWT on initialization (via [PyJWT](https://pyjwt.readthedocs.io/)) and attaches it to every request:
+
+```python
+headers = client.get_auth_headers()
+# {"Authorization": "Bearer ...", "Content-Type": "application/json", ...}
+```
+
+### Execution APIs
+
+Every operation below has a synchronous method and an `_async` counterpart (e.g. `execute_campaign` / `execute_campaign_async`).
+
+```python
+# Campaign execution
+client.execute_campaign(campaign_id, execution_params=None)
+client.get_execution_status(execution_id)
+client.cancel_execution(execution_id)
+
+# Batch jobs
+client.submit_batch_job(job_data)
+client.get_batch_job_status(job_id)
+client.cancel_batch_job(job_id)
+client.get_batch_jobs(limit=50, offset=0, status_filter=None)
+
+# Scheduling
+client.schedule_job(schedule_data)
+client.get_scheduled_jobs(limit=50, offset=0, active_only=True)
+client.update_schedule(schedule_id, schedule_data)
+client.delete_schedule(schedule_id)
+
+# Metrics
+client.get_execution_metrics(start_date=None, end_date=None, campaign_id=None)
+```
+
+#### Async usage
+
 ```python
 import asyncio
 from sasci360solexecute.base import CI360ExecuteBase, CI360ExecuteConfig
 
-async def execute_marketing_workflow():
-    client = CI360ExecuteBase(CI360ExecuteConfig(
-        host="https://your-ci360-host.sas.com",
-        secret_key="your-secret-key",
-        tenant_id="your-tenant-id"
-    ))
-
-    # Execute campaign asynchronously
-    campaign_result = await client.execute_campaign_async("summer-promo-2024")
-    execution_id = campaign_result["executionId"]
-
-    # Monitor execution in real-time
+async def monitor_execution(client, execution_id):
     while True:
         status = await client.get_execution_status_async(execution_id)
-        print(f"Campaign status: {status['status']}")
+        if status["status"] in ("completed", "failed", "cancelled"):
+            return status
+        await asyncio.sleep(10)
 
-        if status["status"] in ["completed", "failed", "cancelled"]:
-            break
+async def main():
+    config = CI360ExecuteConfig(
+        host="https://your-ci360-host.sas.com",
+        secret_key="your-secret-key",
+        tenant_id="your-tenant-id",
+    )
+    async with CI360ExecuteBase(config) as client:
+        result = await client.execute_campaign_async("campaign-123")
+        print(result)
 
-        await asyncio.sleep(30)  # Check every 30 seconds
-
-# Run async workflow
-asyncio.run(execute_marketing_workflow())
-```
-
-#### Batch Job Operations
-```python
-# Submit a batch job
-job_data = {
-    "name": "Customer Update Batch",
-    "operations": [{"type": "update", "data": {"customerId": "123"}}]
-}
-
-result = client.submit_batch_job(job_data)
-print(f"Batch job queued: {result['jobId']}")
+asyncio.run(main())
 ```
 
 ### Error Handling
 
-#### Exception Types
 ```python
 from sasci360solexecute.base import (
     CI360ExecuteBase,
-    CI360ExecuteError,
     CI360ExecuteAuthError,
-    CI360ExecuteValidationError
+    CI360ExecuteConnectionError,
+    CI360ExecuteValidationError,
 )
 
 try:
     client = CI360ExecuteBase(config)
-    result = client.execute_campaign("summer-promo-2024")
+    status = client.get_execution_status("execution-123")
+except CI360ExecuteValidationError as e:
+    print(f"Invalid configuration: {e}")
 except CI360ExecuteAuthError as e:
     print(f"Authentication failed: {e}")
-    # Handle auth issues (token refresh, credentials)
-except CI360ExecuteValidationError as e:
-    print(f"Validation error: {e}")
-    # Handle campaign configuration issues
-except CI360ExecuteError as e:
-    print(f"Execution error: {e}")
-    # Handle general execution errors
+except CI360ExecuteConnectionError as e:
+    print(f"Connection error: {e}")
 ```
 
-#### Campaign Failure Recovery
-```python
-import time
+All of the above inherit from `CI360ExecuteError`, the base exception for the module.
 
-def execute_campaign_with_recovery(client, campaign_id, max_retries=3):
-    for attempt in range(max_retries + 1):
-        try:
-            return client.execute_campaign(campaign_id)
-        except CI360ExecuteError as e:
-            if attempt < max_retries:
-                print(f"Campaign execution failed (attempt {attempt + 1}): {e}")
-                time.sleep(2 ** attempt)  # exponential backoff
-                continue
-            raise
-```
+### Testing
 
-### Testing Approaches
-
-See [tests/test_base.py](tests/test_base.py) for the full suite. The pattern used throughout:
+See [tests/test_base.py](tests/test_base.py) for the full test suite (100% line coverage on `base.py`). It mocks at the `requests.Session` boundary — the actual point this client makes HTTP calls — rather than a higher-level method, so the connection and URL-construction logic are exercised, not just the call wiring:
 
 ```python
-import asyncio
-import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from sasci360solexecute.base import CI360ExecuteBase, CI360ExecuteConfig
 
-class TestCampaignExecution(unittest.TestCase):
-    def setUp(self):
-        self.config = CI360ExecuteConfig(
-            host="https://api.example.com",
-            secret_key="test-secret-key",
-            tenant_id="test-tenant-id"
-        )
+@patch("sasci360solexecute.base.requests.Session")
+def test_get_execution_status(mock_session_class):
+    mock_session = MagicMock()
+    mock_session.request.return_value.status_code = 200
+    mock_session.request.return_value.json.return_value = {"status": "completed"}
+    mock_session_class.return_value = mock_session
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
-    @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
-    def test_execute_campaign(self, mock_request, mock_encryption_class, mock_session_class):
-        mock_request.return_value = {"executionId": "exec-123", "status": "running"}
-
-        client = CI360ExecuteBase(self.config)
-        result = client.execute_campaign("camp-123")
-
-        self.assertEqual(result["executionId"], "exec-123")
+    config = CI360ExecuteConfig(host="https://api.example.com", secret_key="test-secret", tenant_id="test-tenant")
+    client = CI360ExecuteBase(config)
+    result = client.get_execution_status("execution-123")
+    assert result["status"] == "completed"
 ```
 
-### Performance Considerations
-
-#### Concurrent Campaign Execution
-```python
-# Execute multiple campaigns concurrently
-async def execute_multiple_campaigns(client, campaign_ids):
-    tasks = [client.execute_campaign_async(cid) for cid in campaign_ids]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    successful = []
-    failed = []
-
-    for campaign_id, result in zip(campaign_ids, results):
-        if isinstance(result, Exception):
-            failed.append({"campaign_id": campaign_id, "error": str(result)})
-        else:
-            successful.append(result)
-
-    return successful, failed
+Run the suite with:
+```bash
+pytest tests/
 ```
 
-#### Rate Limiting and Throttling
-```python
-import asyncio
-from sasci360solexecute.base import CI360ExecuteBase
-
-class RateLimitedExecuteClient(CI360ExecuteBase):
-    def __init__(self, *args, requests_per_minute=60, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.requests_per_minute = requests_per_minute
-        self.request_times = []
-
-    async def _make_request_async(self, *args, **kwargs):
-        now = asyncio.get_event_loop().time()
-
-        # Remove old requests outside the time window
-        self.request_times = [t for t in self.request_times if now - t < 60]
-
-        if len(self.request_times) >= self.requests_per_minute:
-            sleep_time = 60 - (now - self.request_times[0])
-            await asyncio.sleep(sleep_time)
-
-        self.request_times.append(now)
-        return await super()._make_request_async(*args, **kwargs)
-```
-
-#### Monitoring and Alerting
-```python
-# Campaign performance monitoring
-def monitor_campaign_performance(client, campaign_id, alert_thresholds):
-    metrics = client.get_execution_metrics(campaign_id=campaign_id)
-
-    alerts = []
-
-    if metrics.get("failedExecutions", 0) > alert_thresholds["max_failures"]:
-        alerts.append(f"High failure count: {metrics['failedExecutions']}")
-
-    return alerts
-```
-
-### Campaign Optimization
-
-1. **A/B Testing**: Implement multivariate campaign testing
-2. **Dynamic Content**: Real-time content optimization based on performance
-3. **Audience Segmentation**: Automated audience splitting and targeting
-4. **Performance Analytics**: Real-time campaign metrics and insights
-5. **Automated Adjustments**: AI-driven campaign parameter optimization
+`tests/test_live_tenant.py` runs the same operations against a real tenant, skipped (not failed) unless `CI360_HOST`, `CI360_SECRET_KEY`, and `CI360_TENANT_ID` are set — see [`UAT.md`](../../UAT.md) in the repo root.
 
 ### Contributing
 
-We welcome your contributions! Please read [CONTRIBUTING](CONTRIBUTING.md) for details on how to submit contributions to this project.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md). Scope a pull request to the package(s) it actually changes, and run this package's own test suite before submitting.
 
 ### License
 
-This project is licensed under the [Nelson Grey LLC Community License 1.0](LICENSE).
+This project is licensed under the [Nelson Grey LLC Community License 1.0](../../LICENSE).
 
 - **Free for individuals, education, and research**: use, modify, and distribute this software for non-commercial purposes
 - **Commercial evaluation**: evaluate the software for a possible commercial use, free of charge
@@ -351,4 +221,4 @@ For commercial licensing inquiries, contact support@nelsongrey.com.
 
 ### Additional Resources
 
-For more information, see [Marketing Execution API](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/rest-mkt-exec-api.htm).
+For more information, see [Marketing Execution API](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/rest-mkt-exec.htm).

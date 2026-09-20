@@ -4,477 +4,206 @@
 
 > **Status: canonical.** This is the actively maintained client for the Plan API.
 
-This repository provides Python interfaces for SAS Customer Intelligence 360 Planning APIs.
+This is an independent, third-party client library maintained by Nelson Grey LLC. It is not affiliated with or endorsed by SAS Institute.
 
 ### Overview
 
-The Planning module enables programmatic management of marketing plans, campaigns, and strategic planning within CI360.
+The Planning module provides `CI360PlanningBase`, a REST client for CI360's Plan API — campaigns, audiences, audience size estimation, campaign optimization, analytics, and campaign templates — with both synchronous and asynchronous methods for every operation.
 
 ### Features
 
-- Marketing plan creation and management
-- Campaign planning and scheduling
-- Budget and resource allocation
-- Plan execution tracking
-- Performance analytics
+- JWT-based authentication
+- Synchronous and asynchronous HTTP methods for every API operation
+- Automatic retries with backoff for transient failures (429/5xx)
+- Campaign CRUD and campaign optimization
+- Audience CRUD and audience size estimation
+- Campaign analytics
+- Campaign template listing and template-based campaign creation
+- Typed exception hierarchy for auth, connection, and validation errors
 
 ### Prerequisites
 
 - Python 3.8+
-- Access to SAS Customer Intelligence 360 environment
-- Required dependencies (see requirements.txt)
+- Access to a SAS Customer Intelligence 360 environment (host, tenant ID, and a shared secret or key configured for JWT signing)
+
+This package depends on `sasci360apicore` from this same monorepo (pulled automatically via `requirements.txt`) for JWT generation and retry-enabled HTTP transport.
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mnelson3/sas-ci360-sol-planning.git
-   cd sas-ci360-sol-planning
-   ```
+This package lives in the `sas-ci360-sdk` monorepo:
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/mnelson3/sas-ci360-sdk.git
+cd sas-ci360-sdk/packages/sol-planning
+pip install -r requirements.txt
+pip install -e .
+```
+
+Installing this package alone does not pull in any other package's dependencies (Workflow, SCIM, etc.).
 
 ### Getting Started
 
 ```python
-from sasci360solplanning import CI360PlanningBase, CI360PlanningConfig
+from sasci360solplanning.base import CI360PlanningBase, CI360PlanningConfig
 
-# Configure the planning client
 config = CI360PlanningConfig(
-    algorithm="HS256",
     host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
+    tenant_id="your-tenant-id",
 )
 
-# Initialize planning client
-planning_client = CI360PlanningBase(config)
+client = CI360PlanningBase(config)
 
-# Create and manage marketing plans
+campaigns = client.get_campaigns(limit=20)
 ```
-
-### Solutions Code
-
-The planning module provides:
-
-1. **Plan Management**: Create and modify marketing plans
-2. **Campaign Planning**: Design and schedule campaigns
-3. **Resource Allocation**: Budget and resource management
-4. **Performance Tracking**: Monitor plan execution and ROI
 
 ### Troubleshooting
 
-- Verify plan configurations and hierarchies
-- Check scheduling conflicts
-- Review budget constraints
-- Monitor plan execution status
+- Verify `host`, `secret_key`, and `tenant_id` are set correctly on `CI360PlanningConfig` — these are required and initialization raises `CI360PlanningValidationError` if any are missing.
+- `host` must include the `https://` scheme for this package.
+- Check `CI360PlanningAuthError` / `CI360PlanningConnectionError` messages for authentication vs. network failures.
+- Enable `logging` at `INFO` level or below on the `sasci360solplanning.base.CI360PlanningBase` logger to see connection and request activity.
 
-## 🛠️ Developer/Implementation Guide
+## Developer/Implementation Guide
 
-This section provides comprehensive guidance for developers implementing marketing planning solutions with SAS CI360.
+### Configuration
 
-### Architecture Overview
+`CI360PlanningConfig` is a dataclass holding connection and behavior settings:
 
-The SAS CI360 Planning module follows a hierarchical planning architecture designed for strategic marketing management:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  Planning Module                            │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ Plan        │ │ Campaign    │ │ Resource    │           │
-│  │ Management  │ │ Planning    │ │ Allocation  │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ REST API    │ │ JWT Auth    │ │ Async I/O   │           │
-│  │ Client      │ │ & Security  │ │ Operations  │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Core Components
-
-1. **Plan Management Layer**
-   - `CI360PlanningBase`: Core client class for planning operations
-   - Marketing plan lifecycle management
-   - Plan hierarchy and dependencies
-   - Strategic objective alignment
-
-2. **Campaign Planning Layer**
-   - Campaign design and scheduling
-   - Target audience planning
-   - Channel strategy development
-   - Timeline and milestone management
-
-3. **Resource Allocation Layer**
-   - Budget planning and tracking
-   - Resource assignment and optimization
-   - ROI forecasting and analysis
-   - Performance measurement
-
-### Configuration Management
-
-#### Environment Variables
-```bash
-export SAS_CI360_SECRET_KEY="your-secret-key"
-export SAS_CI360_TENANT_ID="your-tenant-id"
-```
-
-#### Configuration Class
 ```python
 from sasci360solplanning.base import CI360PlanningConfig
 
 config = CI360PlanningConfig(
-    algorithm="HS256",
-    api="plan",
+    algorithm="HS256",          # JWT signing algorithm
+    api_base="/marketingPlanning",
     encoding="utf-8",
-    host="your-ci360-host.sas.com",
+    host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
+    tenant_id="your-tenant-id",
+    timeout=30,                 # per-request timeout, seconds
+    max_retries=3,
+    retry_backoff=0.5,
+    enable_compression=True,
+    max_campaigns_per_user=100,
+    max_audience_size=1000000,
 )
 ```
 
-### API Integration Patterns
+`host`, `secret_key`, and `tenant_id` are required; the client raises `CI360PlanningValidationError` on construction if any are missing.
 
-#### Marketing Plan Management
+### Authentication
+
+`CI360PlanningBase` generates a JWT on initialization (via [PyJWT](https://pyjwt.readthedocs.io/)) and attaches it to every request:
+
 ```python
-from sasci360solplanning.base import CI360PlanningBase
-
-# Initialize client
-client = CI360PlanningBase()
-
-# Create a marketing plan
-plan_data = {
-    'name': 'Q4 2024 Marketing Plan',
-    'description': 'Comprehensive holiday marketing strategy',
-    'objectives': [
-        'Increase revenue by 25%',
-        'Acquire 10,000 new customers',
-        'Improve brand awareness'
-    ],
-    'budget': {
-        'total': 500000,
-        'currency': 'USD',
-        'allocation': {
-            'digital': 0.4,
-            'traditional': 0.3,
-            'events': 0.3
-        }
-    },
-    'timeline': {
-        'start_date': '2024-10-01',
-        'end_date': '2024-12-31'
-    }
-}
-
-result = client.create_plan(plan_data)
-print(f"Plan created: {result['plan_id']}")
+headers = client.get_auth_headers()
+# {"Authorization": "Bearer ...", "Content-Type": "application/json", ...}
 ```
 
-#### Asynchronous Operations
+### Planning APIs
+
+Every operation below has a synchronous method and an `_async` counterpart (e.g. `get_campaigns` / `get_campaigns_async`).
+
+```python
+# Campaigns
+client.get_campaigns(limit=50, offset=0, filters=None)
+client.get_campaign(campaign_id)
+client.create_campaign(campaign_data)
+client.update_campaign(campaign_id, campaign_data)
+client.delete_campaign(campaign_id)
+client.optimize_campaign(campaign_id, optimization_params=None)
+
+# Audiences
+client.get_audiences(limit=50, offset=0, filters=None)
+client.get_audience(audience_id)
+client.create_audience(audience_data)
+client.update_audience(audience_id, audience_data)
+client.delete_audience(audience_id)
+client.estimate_audience_size(audience_criteria)
+
+# Analytics and templates
+client.get_campaign_analytics(campaign_id, start_date=None, end_date=None)
+client.get_campaign_templates(category=None, limit=50, offset=0)
+client.create_campaign_from_template(template_id, campaign_data)
+```
+
+#### Async usage
+
 ```python
 import asyncio
-from sasci360solplanning.base import CI360PlanningBase
+from sasci360solplanning.base import CI360PlanningBase, CI360PlanningConfig
 
-async def manage_marketing_plan():
-    client = CI360PlanningBase()
+async def main():
+    config = CI360PlanningConfig(
+        host="https://your-ci360-host.sas.com",
+        secret_key="your-secret-key",
+        tenant_id="your-tenant-id",
+    )
+    async with CI360PlanningBase(config) as client:
+        campaign = await client.create_campaign_async({"name": "Q4 Promo"})
+        print(campaign)
 
-    # Get plan details asynchronously
-    plan = await client.get_plan_async('plan-123')
-    print(f"Plan: {plan['name']} - Budget: ${plan['budget']['total']}")
-
-    # Update plan with new objectives
-    update_data = {
-        'objectives': plan['objectives'] + ['Launch new product line'],
-        'budget': {
-            'total': 600000,
-            'allocation': {
-                'digital': 0.5,
-                'traditional': 0.2,
-                'events': 0.2,
-                'product_launch': 0.1
-            }
-        }
-    }
-    result = await client.update_plan_async('plan-123', update_data)
-    print(f"Plan updated: {result['plan_id']}")
-
-# Run async operations
-asyncio.run(manage_marketing_plan())
-```
-
-#### Campaign Planning
-```python
-# Create campaign within a plan
-campaign_data = {
-    'plan_id': 'plan-123',
-    'name': 'Holiday Email Campaign',
-    'description': 'Seasonal email marketing campaign',
-    'channels': ['email', 'social_media'],
-    'target_audience': {
-        'segments': ['newsletter_subscribers', 'past_customers'],
-        'size': 50000
-    },
-    'budget': 75000,
-    'schedule': {
-        'start_date': '2024-11-01T09:00:00Z',
-        'end_date': '2024-12-24T23:59:59Z'
-    },
-    'goals': {
-        'open_rate_target': 0.25,
-        'click_rate_target': 0.05,
-        'conversion_target': 0.02
-    }
-}
-
-campaign = client.create_campaign(campaign_data)
-print(f"Campaign created: {campaign['campaign_id']}")
+asyncio.run(main())
 ```
 
 ### Error Handling
 
-#### Exception Types
 ```python
 from sasci360solplanning.base import (
     CI360PlanningBase,
-    CI360PlanningError,
     CI360PlanningAuthError,
-    CI360PlanningValidationError
+    CI360PlanningConnectionError,
+    CI360PlanningValidationError,
 )
 
 try:
-    client = CI360PlanningBase()
-    plans = client.get_plans()
+    client = CI360PlanningBase(config)
+    campaigns = client.get_campaigns()
+except CI360PlanningValidationError as e:
+    print(f"Invalid configuration: {e}")
 except CI360PlanningAuthError as e:
     print(f"Authentication failed: {e}")
-    # Handle auth issues (token refresh, credentials)
-except CI360PlanningValidationError as e:
-    print(f"Validation error: {e}")
-    # Handle plan/campaign validation issues
-except CI360PlanningError as e:
-    print(f"Planning error: {e}")
-    # Handle general planning API errors
+except CI360PlanningConnectionError as e:
+    print(f"Connection error: {e}")
 ```
 
-#### Plan Validation
+All of the above inherit from `CI360PlanningError`, the base exception for the module.
+
+### Testing
+
+See [tests/test_base.py](tests/test_base.py) for the full test suite (100% line coverage on `base.py`). It mocks at the `requests.Session` boundary — the actual point this client makes HTTP calls — rather than a higher-level method, so the connection and URL-construction logic are exercised, not just the call wiring:
+
 ```python
-def validate_plan_data(plan_data):
-    """Validate plan data before submission"""
-    errors = []
+from unittest.mock import MagicMock, patch
+from sasci360solplanning.base import CI360PlanningBase, CI360PlanningConfig
 
-    if not plan_data.get('name'):
-        errors.append("Plan name is required")
+@patch("sasci360solplanning.base.requests.Session")
+def test_get_campaigns(mock_session_class):
+    mock_session = MagicMock()
+    mock_session.request.return_value.status_code = 200
+    mock_session.request.return_value.json.return_value = {"items": [], "total": 0}
+    mock_session_class.return_value = mock_session
 
-    if not plan_data.get('budget', {}).get('total'):
-        errors.append("Total budget is required")
-
-    timeline = plan_data.get('timeline', {})
-    if not timeline.get('start_date') or not timeline.get('end_date'):
-        errors.append("Timeline start and end dates are required")
-
-    # Check budget allocation sums to 1.0
-    allocation = plan_data.get('budget', {}).get('allocation', {})
-    if allocation and abs(sum(allocation.values()) - 1.0) > 0.001:
-        errors.append("Budget allocation percentages must sum to 100%")
-
-    return errors
-
-# Usage
-plan_data = {...}  # Your plan data
-errors = validate_plan_data(plan_data)
-if errors:
-    print("Plan validation failed:")
-    for error in errors:
-        print(f"  - {error}")
-else:
-    result = client.create_plan(plan_data)
+    config = CI360PlanningConfig(host="https://api.example.com", secret_key="test-secret", tenant_id="test-tenant")
+    client = CI360PlanningBase(config)
+    result = client.get_campaigns(limit=20)
+    assert result["total"] == 0
 ```
 
-### Testing Approaches
-
-#### Unit Testing
-```python
-import unittest
-from unittest.mock import Mock, patch
-from sasci360solplanning.base import CI360PlanningBase
-
-class TestPlanningOperations(unittest.TestCase):
-    def setUp(self):
-        self.client = CI360PlanningBase()
-        self.mock_response = Mock()
-        self.mock_response.json.return_value = {'plan_id': '123', 'status': 'created'}
-
-    @patch('requests.Session.request')
-    def test_create_plan(self, mock_request):
-        mock_request.return_value = self.mock_response
-
-        result = self.client.create_plan({'name': 'Test Plan'})
-        self.assertEqual(result['status'], 'created')
-        mock_request.assert_called_once()
-
-    @patch('sasci360solplanning.base.CI360PlanningBase._generate_token')
-    def test_planning_authentication(self, mock_generate):
-        mock_generate.return_value = 'mock-jwt-token'
-
-        headers = self.client.get_auth_headers()
-        self.assertIn('Authorization', headers)
-        self.assertEqual(headers['Authorization'], 'Bearer mock-jwt-token')
+Run the suite with:
+```bash
+pytest tests/
 ```
 
-#### Integration Testing
-```python
-import pytest
-from sasci360solplanning.base import CI360PlanningBase
-
-@pytest.fixture
-def planning_client():
-    return CI360PlanningBase()
-
-@pytest.mark.integration
-def test_plan_lifecycle(planning_client):
-    # Test complete plan lifecycle
-    plan_data = {
-        'name': 'Integration Test Plan',
-        'description': 'Test plan for integration testing',
-        'budget': {'total': 10000, 'currency': 'USD'},
-        'timeline': {
-            'start_date': '2024-01-01',
-            'end_date': '2024-12-31'
-        }
-    }
-
-    # Create
-    created = planning_client.create_plan(plan_data)
-    plan_id = created['plan_id']
-
-    # Read
-    retrieved = planning_client.get_plan(plan_id)
-    assert retrieved['name'] == 'Integration Test Plan'
-
-    # Update
-    updated_data = plan_data.copy()
-    updated_data['description'] = 'Updated description'
-    updated = planning_client.update_plan(plan_id, updated_data)
-    assert updated['description'] == 'Updated description'
-
-    # Delete
-    deleted = planning_client.delete_plan(plan_id)
-    assert deleted is True
-```
-
-### Performance Considerations
-
-#### Hierarchical Plan Processing
-```python
-# Process plans with dependencies
-def process_plan_hierarchy(client, root_plan_id):
-    """Process plans in hierarchical order respecting dependencies"""
-    processed = set()
-    queue = [root_plan_id]
-
-    while queue:
-        plan_id = queue.pop(0)
-        if plan_id in processed:
-            continue
-
-        plan = client.get_plan(plan_id)
-
-        # Check if dependencies are processed
-        dependencies = plan.get('dependencies', [])
-        if all(dep in processed for dep in dependencies):
-            # Process this plan
-            process_plan(plan)
-            processed.add(plan_id)
-
-            # Add child plans to queue
-            child_plans = plan.get('child_plans', [])
-            queue.extend(child_plans)
-        else:
-            # Re-queue for later processing
-            queue.append(plan_id)
-```
-
-#### Budget Optimization
-```python
-# Optimize budget allocation across campaigns
-def optimize_budget_allocation(client, plan_id, total_budget, constraints):
-    """Optimize budget allocation using linear programming"""
-    campaigns = client.get_plan_campaigns(plan_id)
-
-    # Define optimization problem
-    # This is a simplified example - use libraries like PuLP or scipy.optimize
-    # for production implementations
-
-    allocations = {}
-    remaining_budget = total_budget
-
-    for campaign in campaigns:
-        # Calculate optimal allocation based on constraints
-        base_allocation = campaign['estimated_cost']
-        efficiency_factor = campaign.get('efficiency_score', 1.0)
-
-        allocation = min(
-            base_allocation * efficiency_factor,
-            remaining_budget * constraints.get('max_per_campaign', 0.3)
-        )
-
-        allocations[campaign['id']] = allocation
-        remaining_budget -= allocation
-
-    return allocations
-```
-
-#### Forecasting and Analytics
-```python
-# Generate plan performance forecasts
-def forecast_plan_performance(client, plan_id, historical_data):
-    """Generate performance forecasts using historical data"""
-    plan = client.get_plan(plan_id)
-    campaigns = client.get_plan_campaigns(plan_id)
-
-    forecast = {
-        'revenue_projection': 0,
-        'customer_acquisition': 0,
-        'roi_estimate': 0
-    }
-
-    for campaign in campaigns:
-        # Use historical performance data for forecasting
-        historical_performance = historical_data.get(campaign['type'], {})
-        conversion_rate = historical_performance.get('conversion_rate', 0.02)
-        avg_order_value = historical_performance.get('avg_order_value', 50)
-
-        projected_conversions = campaign['target_audience_size'] * conversion_rate
-        projected_revenue = projected_conversions * avg_order_value
-
-        forecast['revenue_projection'] += projected_revenue
-        forecast['customer_acquisition'] += projected_conversions
-
-    if plan['budget']['total'] > 0:
-        forecast['roi_estimate'] = forecast['revenue_projection'] / plan['budget']['total']
-
-    return forecast
-```
-
-### Strategic Planning Best Practices
-
-1. **Objective Alignment**: Ensure all plans align with business objectives
-2. **Resource Optimization**: Use data-driven budget allocation
-3. **Risk Management**: Implement contingency planning for campaigns
-4. **Performance Monitoring**: Continuous tracking and adjustment
-5. **Stakeholder Communication**: Regular reporting and updates
+`tests/test_live_tenant.py` runs the same operations against a real tenant, skipped (not failed) unless `CI360_HOST`, `CI360_SECRET_KEY`, and `CI360_TENANT_ID` are set — see [`UAT.md`](../../UAT.md) in the repo root.
 
 ### Contributing
 
-We welcome your contributions! Please read [CONTRIBUTING](CONTRIBUTING.md) for details on how to submit contributions to this project.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md). Scope a pull request to the package(s) it actually changes, and run this package's own test suite before submitting.
 
 ### License
 
-This project is licensed under the [Nelson Grey LLC Community License 1.0](LICENSE).
+This project is licensed under the [Nelson Grey LLC Community License 1.0](../../LICENSE).
 
 - **Free for individuals, education, and research**: use, modify, and distribute this software for non-commercial purposes
 - **Commercial evaluation**: evaluate the software for a possible commercial use, free of charge
@@ -485,4 +214,4 @@ For commercial licensing inquiries, contact support@nelsongrey.com.
 
 ### Additional Resources
 
-For more information, see [Plan API](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/rest-plan-api.htm).
+For more information, see [Plan API](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/rest-plan.htm).
