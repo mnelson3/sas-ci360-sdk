@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/packages/api-core"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/marketing-gateway"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-data"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-execute"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-workflow"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-planning"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-content-delivery"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "pip"
+    directory: "/packages/sol-identity"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

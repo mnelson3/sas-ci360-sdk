@@ -2,7 +2,7 @@
 
 ## Overview
 
-Foundational Python library for building solutions against the SAS Customer Intelligence 360 REST API collection.
+SAS CI360 SDK — a monorepo of independently-installable Python clients for the SAS Customer Intelligence 360 REST API family (`packages/api-core`, `packages/sol-*`, `packages/marketing-gateway`).
 
 ## Supported Versions
 
@@ -10,10 +10,11 @@ Only the latest commit on the default branch is supported with security fixes. T
 
 ## Reporting a Vulnerability
 
-Please do not report security vulnerabilities by opening a public issue on GitLab.
+Please do not report security vulnerabilities by opening a public issue.
 
 Instead, email **support@nelsongrey.com** with:
 
+- Which package(s) under `packages/` are affected
 - A description of the vulnerability and its potential impact
 - Steps to reproduce, or a proof of concept if available
 - Any relevant logs or affected code paths
