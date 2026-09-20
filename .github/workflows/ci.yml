@@ -1,0 +1,307 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, staging, develop ]
+  pull_request:
+    branches: [ main, staging, develop ]
+
+jobs:
+  api-core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/api-core
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov pytest-timeout
+          pytest tests/ --timeout=30 --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/api-core/coverage.xml
+          flags: api-core
+          fail_ci_if_error: false
+
+  marketing-gateway:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/marketing-gateway
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --no-deps -e .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/marketing-gateway/coverage.xml
+          flags: marketing-gateway
+          fail_ci_if_error: false
+
+  sol-data:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-data
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-data/coverage.xml
+          flags: sol-data
+          fail_ci_if_error: false
+
+  sol-execute:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-execute
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+          pip install --no-deps -e .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-execute/coverage.xml
+          flags: sol-execute
+          fail_ci_if_error: false
+
+  sol-workflow:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-workflow
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-workflow/coverage.xml
+          flags: sol-workflow
+          fail_ci_if_error: false
+
+  sol-planning:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-planning
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          pip install mypy types-requests
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-planning/coverage.xml
+          flags: sol-planning
+          fail_ci_if_error: false
+
+  sol-content-delivery:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-content-delivery
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-content-delivery/coverage.xml
+          flags: sol-content-delivery
+          fail_ci_if_error: false
+
+  sol-identity:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sol-identity
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Type check with mypy
+        run: |
+          mypy src --ignore-missing-imports
+      - name: Run tests
+        run: |
+          pytest tests/ --cov=src --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: packages/sol-identity/coverage.xml
+          flags: sol-identity
+          fail_ci_if_error: false

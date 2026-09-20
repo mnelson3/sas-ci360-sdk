@@ -9,6 +9,8 @@ We use GitHub for tracking bugs, feature requests, and general support. Please s
 - Documentation issues
 - General questions and support
 
+When filing an issue against one of the packages in `packages/`, please name the package in the title (e.g. `[sol-data] ...`).
+
 ### Issue Reporting
 
 When reporting issues, please include:
@@ -25,13 +27,13 @@ When reporting issues, please include:
 
 ### Security Issues
 
-Please do not report security vulnerabilities as public GitHub issues. See [SECURITY.md](SECURITY.md) for how to report them.
+For security-related issues, please follow the reporting process in [SECURITY.md](SECURITY.md) instead of creating a public GitHub issue.
 
 ### Community Support
 
-- 📖 [Documentation](README.md)
-- 💬 [GitHub Discussions](https://github.com/mnelson3/sas-ci360-sol-content-delivery/discussions)
-- 🐛 [Issue Tracker](https://github.com/mnelson3/sas-ci360-sol-content-delivery/issues)
+- Documentation: this repository's [README](README.md) and each package's own README under `packages/`
+- GitHub Discussions: https://github.com/mnelson3/sas-ci360-sdk/discussions
+- Issue Tracker: https://github.com/mnelson3/sas-ci360-sdk/issues
 
 ### Commercial Support
 
