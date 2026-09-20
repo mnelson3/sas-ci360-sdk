@@ -22,6 +22,3 @@ class Base:
 		self.encryption = encryption.Encryption(algorithm=self.algorithm, encoding=self.encoding)
 		self.token = self.encryption.generate_jwt(tenant_id=self.tenant_id, secret_key=self.secret_key)
 
-
-if __name__ == "__main__":
-	Base()

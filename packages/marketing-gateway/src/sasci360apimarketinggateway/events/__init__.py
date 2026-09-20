@@ -58,6 +58,3 @@ class Events(Base):
 		url = "https://{0}{1}{2}".format(host, api, api_path)
 		return self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 
-
-if __name__ == "__main__":
-	Events()
