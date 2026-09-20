@@ -19,10 +19,10 @@ Plan is CI360's marketing-planning surface — campaigns and their target audien
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| BG-1 | Cover campaign CRUD, audience CRUD, and campaign analytics. | API surface parity with CI360's Plan API |
-| BG-2 | Every operation verifiable without a live tenant. | Coverage present since before 2026-09-20's testing pass |
-| BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
-| BG-4 | Generate a JWT CI360 actually accepts. | 0 auth rejections traceable to this package |
+| SOLPLANNING-BG-1 | Cover campaign CRUD, audience CRUD, and campaign analytics. | API surface parity with CI360's Plan API |
+| SOLPLANNING-BG-2 | Every operation verifiable without a live tenant. | Coverage present since before 2026-09-20's testing pass |
+| SOLPLANNING-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
+| SOLPLANNING-BG-4 | Generate a JWT CI360 actually accepts. | 0 auth rejections traceable to this package |
 
 ## 4. Stakeholders
 
@@ -41,8 +41,8 @@ The Plan connector framework itself (third-party offer sync) — that's `sas-ci3
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-1 | JWTs must use `api-core`'s canonical `Encryption` class, not a package-local reimplementation. | P1 (real bug found and fixed — see TRD.md) |
-| BR-2 | Every request must land under `/marketingPlanning`, not just at `host`'s root. | P1 (real bug found and fixed — see TRD.md) |
+| SOLPLANNING-BR-1 | JWTs must use `api-core`'s canonical `Encryption` class, not a package-local reimplementation. | P1 (real bug found and fixed — see TRD.md) |
+| SOLPLANNING-BR-2 | Every request must land under `/marketingPlanning`, not just at `host`'s root. | P1 (real bug found and fixed — see TRD.md) |
 
 ## 7. Success metrics
 

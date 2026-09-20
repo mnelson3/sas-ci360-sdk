@@ -19,9 +19,9 @@ Where `sol-data` moves records and `sol-workflow` drives process automation, `so
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| BG-1 | Cover campaign execution, batch jobs, scheduling, and metrics end to end (start, monitor, cancel). | API surface parity with CI360's Marketing Execution API |
-| BG-2 | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
-| BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
+| SOLEXECUTE-BG-1 | Cover campaign execution, batch jobs, scheduling, and metrics end to end (start, monitor, cancel). | API surface parity with CI360's Marketing Execution API |
+| SOLEXECUTE-BG-2 | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
+| SOLEXECUTE-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
 
 ## 4. Stakeholders
 
@@ -39,8 +39,8 @@ See the parent repo's [BRD.md](../../../docs/BRD.md) §5.
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-1 | Every request must land under `/marketingExecution`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
-| BR-2 | `batch_size` config must be validated positive before use. | P2 |
+| SOLEXECUTE-BR-1 | Every request must land under `/marketingExecution`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
+| SOLEXECUTE-BR-2 | `batch_size` config must be validated positive before use. | P2 |
 
 ## 7. Success metrics
 

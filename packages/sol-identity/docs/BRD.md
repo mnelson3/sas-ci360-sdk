@@ -19,9 +19,9 @@ SCIM (System for Cross-domain Identity Management) is the standard CI360 exposes
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| BG-1 | Cover user CRUD (including SCIM PATCH), group CRUD, auth/token operations, service-provider config, and bulk operations. | API surface parity with CI360's SCIM API |
-| BG-2 | Every operation verifiable without a live tenant — and without needing the private `api-core` package installed at all for unit tests. | 100% line coverage on `base.py` (achieved 2026-09-20) |
-| BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
+| SOLIDENTITY-BG-1 | Cover user CRUD (including SCIM PATCH), group CRUD, auth/token operations, service-provider config, and bulk operations. | API surface parity with CI360's SCIM API |
+| SOLIDENTITY-BG-2 | Every operation verifiable without a live tenant — and without needing the private `api-core` package installed at all for unit tests. | 100% line coverage on `base.py` (achieved 2026-09-20) |
+| SOLIDENTITY-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
 
 ## 4. Stakeholders
 
@@ -40,8 +40,8 @@ See the parent repo's [BRD.md](../../../docs/BRD.md) §5.
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-1 | Every request must land under `/scim`, not just at `host`'s root — including the SCIM `ServiceProviderConfig` health check. | P1 (real bug found and fixed, twice over — see TRD.md) |
-| BR-2 | Unit tests must not require the private `api-core` package to be installed. | P1 |
+| SOLIDENTITY-BR-1 | Every request must land under `/scim`, not just at `host`'s root — including the SCIM `ServiceProviderConfig` health check. | P1 (real bug found and fixed, twice over — see TRD.md) |
+| SOLIDENTITY-BR-2 | Unit tests must not require the private `api-core` package to be installed. | P1 |
 
 ## 7. Success metrics
 

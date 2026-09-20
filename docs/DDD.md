@@ -112,7 +112,7 @@ A typed exception hierarchy per domain: `CI360<Domain>Error` base, with `…Auth
 
 ## Testing design
 
-Unit tests patch `requests.Session` (or the specific verb method) **at the point the client actually calls it** — `session.get`/`session.request` — not at a higher-level method like `_make_request_async`, which was the anti-pattern found and retired across this repository on 2026-09-20 (see TRD.md §9). Doing so at the correct boundary is what surfaced both the urljoin defect above and several missing-dependency bugs (TRD.md NFR-8).
+Unit tests patch `requests.Session` (or the specific verb method) **at the point the client actually calls it** — `session.get`/`session.request` — not at a higher-level method like `_make_request_async`, which was the anti-pattern found and retired across this repository on 2026-09-20 (see TRD.md §9). Doing so at the correct boundary is what surfaced both the urljoin defect above and several missing-dependency bugs (TRD.md CI360SDK-NFR-8).
 
 Where a client depends on another internal package for a small piece of functionality (JWT generation), that dependency is stubbed via `sys.modules` injection in a fixture (`sol-identity`'s tests) so the dependent package's tests never require the internal package to be installed.
 
