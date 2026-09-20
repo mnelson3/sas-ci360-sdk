@@ -19,9 +19,9 @@ Marketing Data is the API surface an implementer touches for anything involving 
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| BG-1 | Cover the customer, segment, import/export, schema, import-request-job, file-transfer, and table operations an implementer needs for a real identity-bridge or bulk-data integration. | API surface parity with what `sas-ci360-solutions` actually calls |
-| BG-2 | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
-| BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
+| SOLDATA-BG-1 | Cover the customer, segment, import/export, schema, import-request-job, file-transfer, and table operations an implementer needs for a real identity-bridge or bulk-data integration. | API surface parity with what `sas-ci360-solutions` actually calls |
+| SOLDATA-BG-2 | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
+| SOLDATA-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
 
 ## 4. Stakeholders
 
@@ -40,8 +40,8 @@ Anything outside the Marketing Data API — see the parent repo's [BRD.md](../..
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-1 | `upload_to_signed_url` must upload directly to the signed URL `create_file_transfer_location` returns, without CI360 auth headers (the signed URL is itself pre-authenticated). | P1 |
-| BR-2 | Every request must land under `/marketingData`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
+| SOLDATA-BR-1 | `upload_to_signed_url` must upload directly to the signed URL `create_file_transfer_location` returns, without CI360 auth headers (the signed URL is itself pre-authenticated). | P1 |
+| SOLDATA-BR-2 | Every request must land under `/marketingData`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
 
 ## 7. Success metrics
 

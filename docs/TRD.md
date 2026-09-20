@@ -11,38 +11,38 @@
 
 | BRD | TRD | Relationship |
 | --- | --- | --- |
-| BR-1 | FR-1, NFR-1 | Auth must work from UI-obtainable values only → static-JWT flow with no extra setup. |
-| BR-2 | FR-2…FR-8 | Independent installability → each API category is its own package with its own minimal dependency set. |
-| BR-3 | NFR-2 | No embedded credentials → security requirement, testable by grep, verified 2026-09-20. |
-| BR-5 | NFR-7 | One implementation per API → this repository holds exactly one canonical package per category. |
+| CI360SDK-BR-1 | CI360SDK-FR-1, CI360SDK-NFR-1 | Auth must work from UI-obtainable values only → static-JWT flow with no extra setup. |
+| CI360SDK-BR-2 | CI360SDK-FR-2…CI360SDK-FR-8 | Independent installability → each API category is its own package with its own minimal dependency set. |
+| CI360SDK-BR-3 | CI360SDK-NFR-2 | No embedded credentials → security requirement, testable by grep, verified 2026-09-20. |
+| CI360SDK-BR-5 | CI360SDK-NFR-7 | One implementation per API → this repository holds exactly one canonical package per category. |
 
 ## 2. Functional requirements
 
 | ID | Requirement | Package |
 | --- | --- | --- |
-| FR-1 | Generate a static JWT from a tenant ID and client secret (base64-encoded key, HS256, `{"clientID": tenant_id}` payload) and attach it as a Bearer token to every outbound request. | `api-core::Encryption` |
-| FR-2 | Authenticated CRUD against the Marketing Data API: tables, customer jobs, event jobs, export request jobs, identity records, import request jobs, file transfer location. | `sol-data` |
-| FR-3 | Download Discover data-mart extracts (Detail, DBT Report, Snapshot/Identity) from the Marketing Gateway's discover service. | `marketing-gateway` |
-| FR-4 | Trigger and query marketing execution tasks, batch jobs, scheduled jobs, execution metrics. | `sol-execute` |
-| FR-5 | Read and drive CI360 Workflow processes, triggers, and templates. | `sol-workflow` |
-| FR-6 | Manage Plan API objects (campaigns, audiences, analytics). | `sol-planning` |
-| FR-7 | Manage digital assets, content delivery, and content templates via the Digital Assets API. | `sol-content-delivery` |
-| FR-8 | Provision and query users, groups, and service-provider config via SCIM. | `sol-identity` |
-| FR-9 | Persist every API response payload to a JSON report file, namespaced by folder and timestamp. | `api-core::Reporter` |
-| FR-10 | Run scheduled, unattended jobs on a configurable interval. | `api-core::Scheduler` |
+| CI360SDK-FR-1 | Generate a static JWT from a tenant ID and client secret (base64-encoded key, HS256, `{"clientID": tenant_id}` payload) and attach it as a Bearer token to every outbound request. | `api-core::Encryption` |
+| CI360SDK-FR-2 | Authenticated CRUD against the Marketing Data API: tables, customer jobs, event jobs, export request jobs, identity records, import request jobs, file transfer location. | `sol-data` |
+| CI360SDK-FR-3 | Download Discover data-mart extracts (Detail, DBT Report, Snapshot/Identity) from the Marketing Gateway's discover service. | `marketing-gateway` |
+| CI360SDK-FR-4 | Trigger and query marketing execution tasks, batch jobs, scheduled jobs, execution metrics. | `sol-execute` |
+| CI360SDK-FR-5 | Read and drive CI360 Workflow processes, triggers, and templates. | `sol-workflow` |
+| CI360SDK-FR-6 | Manage Plan API objects (campaigns, audiences, analytics). | `sol-planning` |
+| CI360SDK-FR-7 | Manage digital assets, content delivery, and content templates via the Digital Assets API. | `sol-content-delivery` |
+| CI360SDK-FR-8 | Provision and query users, groups, and service-provider config via SCIM. | `sol-identity` |
+| CI360SDK-FR-9 | Persist every API response payload to a JSON report file, namespaced by folder and timestamp. | `api-core::Reporter` |
+| CI360SDK-FR-10 | Run scheduled, unattended jobs on a configurable interval. | `api-core::Scheduler` |
 
 ## 3. Non-functional requirements
 
 | ID | Category | Requirement | Status as of 2026-09-20 |
 | --- | --- | --- | --- |
-| NFR-1 | Reliability | Every outbound HTTP call retries transient failures (429, 500, 502, 503, 504) with backoff before surfacing an error to the caller. | Verified: identical `Retry`+`HTTPAdapter` config present in all 7 packages. |
-| NFR-2 | Security | Secrets are supplied only via environment variables or a gitignored config file; none appear in source, tests, or fixtures. | Verified: audited, clean. |
-| NFR-3 | Observability | Every module logs errors with context. | Verified per-package. |
-| NFR-4 | Testability | The HTTP layer must be mockable at the `requests` boundary so unit tests never require network access, **and** that mocking must happen at the actual `session.get`/`session.request` call, not at a higher-level method like `_make_request_async` that hides the logic underneath it. | Verified: all 7 packages now have direct tests at the `session` boundary (see DDD.md §Testing design) — this was a real gap until 2026-09-20; see the urljoin finding below. |
-| NFR-5 | Compatibility | Python 3.8–3.11 supported and covered in CI. | Verified in CI matrices. |
-| NFR-6 | Configurability | Safe fallback defaults when no config file is present; fails fast with a named error if `host`/`secret_key`/`tenant_id` is missing. | Verified per-package config-validation tests. |
-| NFR-7 | Maintainability | Exactly one supported implementation per API category in this repository. | Verified — see DDD.md §Consolidation. |
-| NFR-8 | Packaging hygiene | A dependency is declared only if the package's own code imports it; a package's `setup.cfg install_requires` and `requirements.txt` must not drift from each other. | **Real violations found and fixed 2026-09-20**: `api-core`/`marketing-gateway` had a malformed `[install_requires]` section (silently ignored by setuptools — zero deps installed by a bare `pip install`); `sol-content-delivery` was missing `sasci360apicore` and `requests-toolbelt` entirely; `sol-workflow` was missing `api-core`'s transitive deps. All fixed. |
+| CI360SDK-NFR-1 | Reliability | Every outbound HTTP call retries transient failures (429, 500, 502, 503, 504) with backoff before surfacing an error to the caller. | Verified: identical `Retry`+`HTTPAdapter` config present in all 7 packages. |
+| CI360SDK-NFR-2 | Security | Secrets are supplied only via environment variables or a gitignored config file; none appear in source, tests, or fixtures. | Verified: audited, clean. |
+| CI360SDK-NFR-3 | Observability | Every module logs errors with context. | Verified per-package. |
+| CI360SDK-NFR-4 | Testability | The HTTP layer must be mockable at the `requests` boundary so unit tests never require network access, **and** that mocking must happen at the actual `session.get`/`session.request` call, not at a higher-level method like `_make_request_async` that hides the logic underneath it. | Verified: all 7 packages now have direct tests at the `session` boundary (see DDD.md §Testing design) — this was a real gap until 2026-09-20; see the urljoin finding below. |
+| CI360SDK-NFR-5 | Compatibility | Python 3.8–3.11 supported and covered in CI. | Verified in CI matrices. |
+| CI360SDK-NFR-6 | Configurability | Safe fallback defaults when no config file is present; fails fast with a named error if `host`/`secret_key`/`tenant_id` is missing. | Verified per-package config-validation tests. |
+| CI360SDK-NFR-7 | Maintainability | Exactly one supported implementation per API category in this repository. | Verified — see DDD.md §Consolidation. |
+| CI360SDK-NFR-8 | Packaging hygiene | A dependency is declared only if the package's own code imports it; a package's `setup.cfg install_requires` and `requirements.txt` must not drift from each other. | **Real violations found and fixed 2026-09-20**: `api-core`/`marketing-gateway` had a malformed `[install_requires]` section (silently ignored by setuptools — zero deps installed by a bare `pip install`); `sol-content-delivery` was missing `sasci360apicore` and `requests-toolbelt` entirely; `sol-workflow` was missing `api-core`'s transitive deps. All fixed. |
 
 ## 4. Integration requirements
 
@@ -72,7 +72,7 @@ Three logical modes — `development`, `test`, `production` — each with indepe
 
 ## 8. Dependency policy
 
-A dependency is added only when a specific, named import requires it, and reviewed for maintenance status before being pinned. `sas-dlpy` and `SAS-kernel` were found in earlier generations' `requirements.txt` files without being imported anywhere — removed. See NFR-8 above for the setup.cfg/requirements.txt drift bugs found and fixed on 2026-09-20.
+A dependency is added only when a specific, named import requires it, and reviewed for maintenance status before being pinned. `sas-dlpy` and `SAS-kernel` were found in earlier generations' `requirements.txt` files without being imported anywhere — removed. See CI360SDK-NFR-8 above for the setup.cfg/requirements.txt drift bugs found and fixed on 2026-09-20.
 
 ## 9. Testing strategy
 
@@ -82,7 +82,7 @@ A dependency is added only when a specific, named import requires it, and review
 
 ### The mocking-boundary lesson (2026-09-20)
 
-Every test suite in this repository originally mocked `_make_request_async` itself for call-level tests, which is correct for testing *those* methods but left the connection-validation and URL-construction logic underneath completely unexercised. Writing tests one level deeper — at `session.get`/`session.request` — surfaced a real, previously undetected bug present in 5 of the 6 `sol-*` packages: `urljoin(host + api_base, endpoint)` silently drops `api_base` whenever `host` has no trailing slash (RFC 3986 relative-reference resolution treats a no-trailing-slash base as a document to replace, not a directory to extend). Every real request these five clients ever made against a live tenant was hitting the wrong URL. Fixed with plain string formatting instead of `urljoin`. NFR-4 above now states the boundary requirement explicitly so this doesn't recur.
+Every test suite in this repository originally mocked `_make_request_async` itself for call-level tests, which is correct for testing *those* methods but left the connection-validation and URL-construction logic underneath completely unexercised. Writing tests one level deeper — at `session.get`/`session.request` — surfaced a real, previously undetected bug present in 5 of the 6 `sol-*` packages: `urljoin(host + api_base, endpoint)` silently drops `api_base` whenever `host` has no trailing slash (RFC 3986 relative-reference resolution treats a no-trailing-slash base as a document to replace, not a directory to extend). Every real request these five clients ever made against a live tenant was hitting the wrong URL. Fixed with plain string formatting instead of `urljoin`. CI360SDK-NFR-4 above now states the boundary requirement explicitly so this doesn't recur.
 
 ## 10. CI/CD requirements
 
