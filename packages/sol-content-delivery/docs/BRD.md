@@ -19,10 +19,10 @@ Digital Assets is CI360's API for managing the images, documents, and other file
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| `SOLCONTENTDELIVERY-BG-1` | Cover asset CRUD (including file upload), content delivery, templates, and analytics. | API surface parity with CI360's Digital Assets API |
-| `SOLCONTENTDELIVERY-BG-2` | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
-| `SOLCONTENTDELIVERY-BG-3` | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
-| `SOLCONTENTDELIVERY-BG-4` | `pip install` this package alone (without its sibling `requirements.txt`) must actually pull in everything it needs. | 0 `SOLCONTENTDELIVERY-NFR-8` violations (2 were found and fixed — see TRD.md) |
+| SOLCONTENTDELIVERY-BG-1 | Cover asset CRUD (including file upload), content delivery, templates, and analytics. | API surface parity with CI360's Digital Assets API |
+| SOLCONTENTDELIVERY-BG-2 | Every operation verifiable without a live tenant. | 100% line coverage on `base.py` (achieved 2026-09-20) |
+| SOLCONTENTDELIVERY-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT tests present (achieved 2026-09-20) |
+| SOLCONTENTDELIVERY-BG-4 | `pip install` this package alone (without its sibling `requirements.txt`) must actually pull in everything it needs. | 0 SOLCONTENTDELIVERY-NFR-8 violations (2 were found and fixed — see TRD.md) |
 
 ## 4. Stakeholders
 
@@ -40,9 +40,9 @@ See the parent repo's [BRD.md](../../../docs/BRD.md) §5.
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| `SOLCONTENTDELIVERY-BR-1` | Every request — including the multipart upload endpoint — must land under `/digital-assets`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
-| `SOLCONTENTDELIVERY-BR-2` | This package's declared dependencies must actually cover everything its code imports (`sasci360apicore`, `requests-toolbelt`). | P1 (real bug found and fixed, see TRD.md) |
-| `SOLCONTENTDELIVERY-BR-3` | `max_file_size_mb` config must be validated positive before use. | P2 |
+| SOLCONTENTDELIVERY-BR-1 | Every request — including the multipart upload endpoint — must land under `/digital-assets`, not just at `host`'s root. | P1 (real bug found and fixed, see TRD.md) |
+| SOLCONTENTDELIVERY-BR-2 | This package's declared dependencies must actually cover everything its code imports (`sasci360apicore`, `requests-toolbelt`). | P1 (real bug found and fixed, see TRD.md) |
+| SOLCONTENTDELIVERY-BR-3 | `max_file_size_mb` config must be validated positive before use. | P2 |
 
 ## 7. Success metrics
 

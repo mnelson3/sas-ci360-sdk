@@ -32,11 +32,11 @@ The 8 packages here were previously 8 separate repositories with duplicated CI/C
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| `CI360SDK-BG-1` | Give an implementer a working, authenticated API call in under 15 minutes from a fresh clone. | Time-to-first-call |
-| `CI360SDK-BG-2` | Cover the CI360 REST API categories an implementer touches most. | 7/14 API categories covered |
-| `CI360SDK-BG-3` | Reduce this repository to one canonical implementation per API category. | 0 duplicate client implementations |
-| `CI360SDK-BG-4` | Make correctness verifiable without a live CI360 tenant wherever the API surface allows it. | % of tests running without live credentials |
-| `CI360SDK-BG-5` | Where a live tenant genuinely is the only way to verify something (real auth, real connectivity), make that verifiable too, opt-in and never blocking normal CI. | UAT harness present and documented |
+| CI360SDK-BG-1 | Give an implementer a working, authenticated API call in under 15 minutes from a fresh clone. | Time-to-first-call |
+| CI360SDK-BG-2 | Cover the CI360 REST API categories an implementer touches most. | 7/14 API categories covered |
+| CI360SDK-BG-3 | Reduce this repository to one canonical implementation per API category. | 0 duplicate client implementations |
+| CI360SDK-BG-4 | Make correctness verifiable without a live CI360 tenant wherever the API surface allows it. | % of tests running without live credentials |
+| CI360SDK-BG-5 | Where a live tenant genuinely is the only way to verify something (real auth, real connectivity), make that verifiable too, opt-in and never blocking normal CI. | UAT harness present and documented |
 
 ## 4. Stakeholders
 
@@ -75,11 +75,11 @@ Marketing Audience API, Marketing Design API, Marketing Administration API, Mark
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| `CI360SDK-BR-1` | Authenticate against a CI360 tenant using only values obtainable from CI360's own UI (Access Point host, tenant ID, client secret) — no undocumented setup steps. | P1 |
-| `CI360SDK-BR-2` | Each package usable independently — installing one doesn't require installing another's dependencies. | P1 |
-| `CI360SDK-BR-3` | No credential, tenant identifier, or client-specific data may appear in source, tests, or documentation. | P1 |
-| `CI360SDK-BR-4` | Licensing terms visible before a prospective adopter writes any code against a package. | P1 |
-| `CI360SDK-BR-5` | Exactly one implementation per API category in this repository; superseded implementations are archived elsewhere, not left live alongside their replacement. | P1 |
+| CI360SDK-BR-1 | Authenticate against a CI360 tenant using only values obtainable from CI360's own UI (Access Point host, tenant ID, client secret) — no undocumented setup steps. | P1 |
+| CI360SDK-BR-2 | Each package usable independently — installing one doesn't require installing another's dependencies. | P1 |
+| CI360SDK-BR-3 | No credential, tenant identifier, or client-specific data may appear in source, tests, or documentation. | P1 |
+| CI360SDK-BR-4 | Licensing terms visible before a prospective adopter writes any code against a package. | P1 |
+| CI360SDK-BR-5 | Exactly one implementation per API category in this repository; superseded implementations are archived elsewhere, not left live alongside their replacement. | P1 |
 
 ## 7. Success metrics
 

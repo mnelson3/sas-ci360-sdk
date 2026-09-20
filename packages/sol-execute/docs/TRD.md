@@ -10,20 +10,20 @@
 
 | ID | Requirement | Method |
 | --- | --- | --- |
-| `SOLEXECUTE-FR-1` | Execute a campaign; get execution status; cancel a running execution. | `execute_campaign`, `get_execution_status`, `cancel_execution` (+ `_async`) |
-| `SOLEXECUTE-FR-2` | Submit a batch job; get its status; cancel it; list batch jobs (with status filter). | `submit_batch_job`, `get_batch_job_status`, `cancel_batch_job`, `get_batch_jobs` (+ `_async`) |
-| `SOLEXECUTE-FR-3` | Schedule a job; list scheduled jobs (active-only filter); update/delete a schedule. | `schedule_job`, `get_scheduled_jobs`, `update_schedule`, `delete_schedule` (+ `_async`) |
-| `SOLEXECUTE-FR-4` | Get execution metrics (filterable by date range and campaign). | `get_execution_metrics` (+ `_async`) |
+| SOLEXECUTE-FR-1 | Execute a campaign; get execution status; cancel a running execution. | `execute_campaign`, `get_execution_status`, `cancel_execution` (+ `_async`) |
+| SOLEXECUTE-FR-2 | Submit a batch job; get its status; cancel it; list batch jobs (with status filter). | `submit_batch_job`, `get_batch_job_status`, `cancel_batch_job`, `get_batch_jobs` (+ `_async`) |
+| SOLEXECUTE-FR-3 | Schedule a job; list scheduled jobs (active-only filter); update/delete a schedule. | `schedule_job`, `get_scheduled_jobs`, `update_schedule`, `delete_schedule` (+ `_async`) |
+| SOLEXECUTE-FR-4 | Get execution metrics (filterable by date range and campaign). | `get_execution_metrics` (+ `_async`) |
 
 `api_base` default: `/marketingExecution`.
 
 ## 2. Non-functional requirements
 
-Inherits `SOLEXECUTE-NFR-1` through `SOLEXECUTE-NFR-8` from [sas-ci360-sdk/docs/TRD.md](../../../docs/TRD.md). Status specific to this package as of 2026-09-20:
+Inherits SOLEXECUTE-NFR-1 through SOLEXECUTE-NFR-8 from [sas-ci360-sdk/docs/TRD.md](../../../docs/TRD.md). Status specific to this package as of 2026-09-20:
 
 | ID | Status |
 | --- | --- |
-| `SOLEXECUTE-NFR-4` (Testability, correct boundary) | **Fixed**: same `urljoin` api_base-dropping defect as `sol-data`, `sol-workflow`, and `sol-identity`. Fixed to plain string formatting. |
+| SOLEXECUTE-NFR-4 (Testability, correct boundary) | **Fixed**: same `urljoin` api_base-dropping defect as `sol-data`, `sol-workflow`, and `sol-identity`. Fixed to plain string formatting. |
 | Coverage | 66% → 100% on `base.py` (52 tests). |
 | Config validation | `batch_size <= 0` raises `CI360ExecuteValidationError` — unique to this package among the `sol-*` clients (others validate different domain-specific bounds, e.g. `max_concurrent_workflows` in `sol-workflow`). |
 
@@ -37,7 +37,7 @@ Same as the parent repository.
 
 ## 5. Dependency policy
 
-Same `SOLEXECUTE-NFR-8` pattern as every `sol-*` package.
+Same SOLEXECUTE-NFR-8 pattern as every `sol-*` package.
 
 ## 6. Testing strategy
 
