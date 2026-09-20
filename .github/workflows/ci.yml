@@ -259,6 +259,7 @@ jobs:
           flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Type check with mypy
         run: |
+          pip install mypy types-requests
           mypy src --ignore-missing-imports
       - name: Run tests
         run: |
