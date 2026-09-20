@@ -2,87 +2,124 @@
 
 ## SAS 360 API MARKETING GATEWAY LIBRARY
 
-> **Status: canonical.** This is the actively maintained client for the Marketing Gateway API (Discover data downloads). No newer `sol-*` equivalent exists yet.
+> **Status: canonical.** This is the actively maintained client for the Marketing Gateway API (Discover data downloads). No newer `sol-*` equivalent exists yet — this package predates the `Config`-dataclass generation the other packages use, and has its own shape (see below).
+
+This is an independent, third-party client library maintained by Nelson Grey LLC. It is not affiliated with or endorsed by SAS Institute.
 
 ### Overview
 
-The Marketing Gateway API provides access to a variety of features in SAS Customer Intelligence 360. You can use this API to perform tasks like downloading data records and injecting external events.
+The Marketing Gateway API downloads Discover data-mart extracts (base, detail, identity, reprocessed tables), injects external events, and reads on-premises agent/config info. This package provides five classes — `Root`, `DataDownload`, `Events`, `Agents`, `Configuration` — each constructed independently from the same six connection values, rather than sharing one `Config` dataclass.
 
-For detailed information on REST API:<br>
-https://support.sas.com/documentation/onlinedoc/ci/ci360-apis/marketingGateway/v2/redoc.html
-<br><br>
+For the full upstream API reference, see SAS's [Marketing Gateway API docs](https://support.sas.com/documentation/onlinedoc/ci/ci360-apis/marketingGateway/v2/redoc.html).
 
 ### Table of Contents
 
-This topic contains the following sections:
-
- - <a href="#prerequisites">Prerequisites</a>
- - <a href="#installation">Installation</a>
- - <a href="#getting-started">Getting Started</a>
- - <a href="#api-marketing-gateway-code">API Marketing Gateway Code</a>
- - <a href="#troubleshooting">Troubleshooting</a>
- - <a href="#contributing">Contributing</a>
- - <a href="#license">License</a>
- - <a href="#additional-resources">Additional Resources</a>
-<br><br>
+ - [Prerequisites](#prerequisites)
+ - [Installation](#installation)
+ - [Getting Started](#getting-started)
+ - [API Marketing Gateway Code](#api-marketing-gateway-code)
+ - [Troubleshooting](#troubleshooting)
+ - [Contributing](#contributing)
+ - [License](#license)
+ - [Additional Resources](#additional-resources)
 
 ### Prerequisites
 
- * Required Python: >=3.6
- * Customer Intelligence 360 Tenant with Administrative Rights<
- * SAS CI360 API Core Library:<br>
-   https://github.com/mnelson3/sas_ci360_api_core
-<br><br>
+- Python 3.8+
+- A Customer Intelligence 360 tenant with administrative rights
+- `sasci360apicore` — this package's own dependency on the shared auth/transport library, pulled automatically from this same monorepo (see Installation)
+
+**This package's `host` is a bare hostname** (e.g. `extapigwservice-prod.ci360.sas.com`), not a full URL — every class builds the `https://` prefix itself. This differs from the `sol-*` packages, which need `host` to already include `https://`.
 
 ### Installation
 
-To install the SAS CI360 API Marketing Gateway Library from a clone of this repository:
- 1. `git clone https://github.com/mnelson3/sas_ci360_api_marketing_gateway.git`
- 1. `cd sas_ci360_api_marketing_gateway`
- 1. `pip install .`
-<br><br>
+This package lives in the `sas-ci360-sdk` monorepo:
+
+```bash
+git clone https://github.com/mnelson3/sas-ci360-sdk.git
+cd sas-ci360-sdk/packages/marketing-gateway
+pip install -r requirements.txt
+pip install -e .
+```
+
+Installing this package alone does not pull in any other package's dependencies (Workflow, SCIM, etc.) beyond `sasci360apicore`.
 
 ### Getting Started
 
-While this library is available for review, please note that it is considered a work in process and NOT considered "released for production".
-<br><br>
+```python
+from sasci360apimarketinggateway.root import Root
+
+client = Root(
+    algorithm="HS256",
+    api="/marketingGateway",
+    encoding="utf-8",
+    host="extapigwservice-prod.ci360.sas.com",   # bare hostname, no https://
+    secret_key="your-secret-key",
+    tenant_id="your-tenant-id",
+)
+
+response = client.get_root()
+print(response.json())
+```
+
+Every class in this package (`Root`, `DataDownload`, `Events`, `Agents`, `Configuration`) takes the same six positional arguments and returns a `requests.Response` from each method — call `.json()`, `.status_code`, etc. yourself, rather than getting a pre-parsed dict back.
 
 ### API Marketing Gateway Code
 
- 1. Agents - Contains the operations for downloading on-premises agents. To download the on-premises SDK, use the /agent endpoint to download the general agent (which includes the SDK). Note: This call does not require authentication. The response is a direct download of the .zip file. Refer to the instructions for your REST API client if you have issues processing the response.
- 1. Configuration - Contains the operations to see your API configuration.
- 1. Data Download - Returns the links to download the Discover Base Tables (DBTs) and Analytical Base Tables (ABTs). These tables are updated about every four hours. Only completed sessions are available for download.
- 1. Events - Contains operations to upload bulk events or inject single events. Note: Injected events must have corresponding external events that are already defined in SAS Customer Intelligence 360. For more information, see Working with External Events.
- 1. Root - Contains the operations for this root resource.
-<br><br>
+```python
+from sasci360apimarketinggateway.data_download import DataDownload
+from sasci360apimarketinggateway.events import Events
+from sasci360apimarketinggateway.agents import Agents
+from sasci360apimarketinggateway.configuration import Configuration
+
+conn = dict(
+    algorithm="HS256",
+    api="/marketingGateway",
+    encoding="utf-8",
+    host="extapigwservice-prod.ci360.sas.com",
+    secret_key="your-secret-key",
+    tenant_id="your-tenant-id",
+)
+
+# Discover data-mart downloads (updated roughly every 4 hours; only completed sessions are available)
+downloader = DataDownload(**conn)
+downloader.get_base_tables()
+downloader.get_detail_tables()
+downloader.get_identity_tables()
+downloader.get_reprocessed_tables()
+
+# External events — the event name must already be defined in CI360 as an external event
+events = Events(**conn)
+events.create_external_event(payload={"eventName": "purchase", "eventData": {}})
+events.create_bulk_events(payload={"events": []})
+
+# On-premises agent downloads (no authentication required for the underlying endpoint)
+agents = Agents(**conn)
+agents.get_general_agent()      # includes the SDK
+agents.get_diagnostics_agent()
+agents.get_direct_agent()
+agents.get_optimize_agent()
+
+# API configuration
+configuration = Configuration(**conn)
+configuration.get_configuration()
+```
 
 ### Troubleshooting
 
-For issues specific to sasci360apicore or sasci360apimarketinggateway try updating the libraries.
-
-To update sasci360apicore:
- 1. Pull the latest changes from a clone of the [SAS CI360 API Core Library](https://github.com/mnelson3/sas_ci360_api_core)
- 1. Open a terminal window (Unix/macOS) or command prompt (Windows) in that clone
- 1. Copy and paste the following line at the cursor<br>
-    pip install --upgrade .
- 1. Press "Enter"
-
-To update sasci360apimarketinggateway:
- 1. Pull the latest changes from a clone of this repository
- 1. Open a terminal window (Unix/macOS) or command prompt (Windows) in that clone
- 1. Copy and paste the following line at the cursor<br>
-    pip install --upgrade .
- 1. Press "Enter"
-<br><br>
+- Every method returns a raw `requests.Response`; check `.status_code` and call `.json()` yourself — these classes don't raise a typed exception hierarchy the way the newer `sol-*` packages do.
+- Double-check `host` is a **bare hostname**, not a full URL — passing `https://...` here produces a malformed request URL.
+- `Agents.get_general_agent()` (and the other agent endpoints) return a direct file download, not JSON — don't call `.json()` on that response.
+- `Events.create_external_event`/`create_bulk_events` require the event name(s) to already exist in CI360 as defined external events; see [Working with External Events](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintwlma/n05dhxe32dd3own1e2iw0z7lkfw2.htm) in the SAS docs.
+- This package depends on `sasci360apicore`'s `connection` and `encryption` modules; if you're seeing import errors, confirm `requirements.txt` installed successfully (it pulls `sasci360apicore` from this monorepo automatically).
 
 ### Contributing
 
-We welcome your contributions! Please read [CONTRIBUTING](CONTRIBUTING.md) for details on how to submit contributions to this project.
-<br><br>
+See [CONTRIBUTING.md](../../CONTRIBUTING.md). Scope a pull request to the package(s) it actually changes, and run this package's own test suite before submitting.
 
 ### License
 
-This project is licensed under the [Nelson Grey LLC Community License 1.0](LICENSE).
+This project is licensed under the [Nelson Grey LLC Community License 1.0](../../LICENSE).
 
 - **Free for individuals, education, and research**: use, modify, and distribute this software for non-commercial purposes
 - **Commercial evaluation**: evaluate the software for a possible commercial use, free of charge
@@ -93,5 +130,4 @@ For commercial licensing inquiries, contact support@nelsongrey.com.
 
 ### Additional Resources
 
-For more information, see [REST APIs](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/ch-rest-apis.htm).
-<br><br>
+For more information, see [REST APIs](https://go.documentation.sas.com/doc/en/cintcdc/production.a/cintapis/ch-rest-apis.htm) and the [Marketing Gateway API reference](https://support.sas.com/documentation/onlinedoc/ci/ci360-apis/marketingGateway/v2/redoc.html).

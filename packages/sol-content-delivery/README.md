@@ -4,385 +4,205 @@
 
 > **Status: canonical.** This is the actively maintained client for the Digital Assets API.
 
-This repository provides Python interfaces for SAS Customer Intelligence 360 Digital Assets and Content Delivery APIs.
+This is an independent, third-party client library maintained by Nelson Grey LLC. It is not affiliated with or endorsed by SAS Institute.
 
 ### Overview
 
-The Content Delivery module enables programmatic management of digital assets, content creation, and delivery operations within CI360.
+The Content Delivery module provides `CI360ContentDeliveryBase`, a REST client for CI360's Digital Assets API — asset CRUD, content delivery and delivery status, content templates, and content analytics — with both synchronous and asynchronous methods for every operation.
 
 ### Features
 
-- Digital asset management
-- Content creation and publishing
-- Asset delivery and distribution
-- Content personalization
-- Asset performance tracking
+- JWT-based authentication
+- Synchronous and asynchronous HTTP methods for every API operation
+- Automatic retries with backoff for transient failures (429/5xx)
+- Digital asset CRUD and file upload
+- Content delivery triggering and delivery-status polling
+- Content template listing and template-based content creation
+- Content delivery analytics
+- Typed exception hierarchy for auth, connection, and validation errors
 
 ### Prerequisites
 
 - Python 3.8+
-- Access to SAS Customer Intelligence 360 environment
-- Required dependencies (see requirements.txt)
+- Access to a SAS Customer Intelligence 360 environment (host, tenant ID, and a shared secret or key configured for JWT signing)
+
+This package depends on `sasci360apicore` and `requests-toolbelt` (pulled automatically via `requirements.txt`) — `requests-toolbelt` is used for multipart asset uploads.
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mnelson3/sas-ci360-sol-content-delivery.git
-   cd sas-ci360-sol-content-delivery
-   ```
+This package lives in the `sas-ci360-sdk` monorepo:
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/mnelson3/sas-ci360-sdk.git
+cd sas-ci360-sdk/packages/sol-content-delivery
+pip install -r requirements.txt
+pip install -e .
+```
+
+Installing this package alone does not pull in any other package's dependencies (Workflow, SCIM, etc.).
 
 ### Getting Started
 
 ```python
-from sasci360solcontentdelivery.base import Base
+from sasci360solcontentdelivery.base import CI360ContentDeliveryBase, CI360ContentDeliveryConfig
 
-# Initialize content delivery client
-content_client = Base(
-    algorithm="HS256",
-    api="digital-assets",
-    encoding="utf-8",
-    host="your-ci360-host",
+config = CI360ContentDeliveryConfig(
+    host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
+    tenant_id="your-tenant-id",
 )
 
-# Manage digital assets and content
+client = CI360ContentDeliveryBase(config)
+
+assets = client.get_assets(limit=20)
 ```
-
-### Solutions Code
-
-The content delivery module provides:
-
-1. **Asset Management**: Upload, organize, and manage digital assets
-2. **Content Operations**: Create and publish marketing content
-3. **Delivery Control**: Manage content distribution channels
-4. **Personalization**: Dynamic content adaptation
 
 ### Troubleshooting
 
-- Verify asset formats and sizes
-- Check content publishing permissions
-- Review delivery channel configurations
-- Monitor asset performance metrics
+- Verify `host`, `secret_key`, and `tenant_id` are set correctly on `CI360ContentDeliveryConfig` — these are required and initialization raises `CI360ContentDeliveryValidationError` if any are missing.
+- `host` must include the `https://` scheme for this package.
+- Check `CI360ContentDeliveryAuthError` / `CI360ContentDeliveryConnectionError` messages for authentication vs. network failures.
+- Enable `logging` at `INFO` level or below on the `sasci360solcontentdelivery.base.CI360ContentDeliveryBase` logger to see connection and request activity.
 
-## 🛠️ Developer/Implementation Guide
+## Developer/Implementation Guide
 
-This section provides comprehensive guidance for developers implementing content delivery solutions with SAS CI360.
+### Configuration
 
-### Architecture Overview
+`CI360ContentDeliveryConfig` is a dataclass holding connection and behavior settings:
 
-The SAS CI360 Content Delivery module follows a modular architecture designed for scalable digital asset management:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                Content Delivery Module                      │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ Asset       │ │ Content     │ │ Delivery    │           │
-│  │ Management  │ │ Operations  │ │ Control     │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ REST API    │ │ JWT Auth    │ │ Async I/O   │           │
-│  │ Client      │ │ & Security  │ │ Operations  │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Core Components
-
-1. **Asset Management Layer**
-   - `CI360ContentDeliveryBase`: Core client class for asset operations
-   - Asset CRUD operations (Create, Read, Update, Delete)
-   - File upload and metadata management
-   - Asset versioning and lifecycle management
-
-2. **Content Operations Layer**
-   - Content publishing and distribution
-   - Personalization engine integration
-   - Content performance analytics
-   - Multi-channel content delivery
-
-3. **Delivery Control Layer**
-   - Delivery channel configuration
-   - Content targeting and segmentation
-   - Delivery scheduling and automation
-   - Performance monitoring and reporting
-
-### Configuration Management
-
-#### Environment Variables
-```bash
-export SAS_CI360_SECRET_KEY="your-secret-key"
-export SAS_CI360_TENANT_ID="your-tenant-id"
-```
-
-#### Configuration Class
 ```python
 from sasci360solcontentdelivery.base import CI360ContentDeliveryConfig
 
 config = CI360ContentDeliveryConfig(
-    algorithm="HS256",
-    api="digital-assets",
+    algorithm="HS256",          # JWT signing algorithm
+    api_base="/digital-assets",
     encoding="utf-8",
-    host="your-ci360-host.sas.com",
+    host="https://your-ci360-host.sas.com",
     secret_key="your-secret-key",
-    tenant_id="your-tenant-id"
+    tenant_id="your-tenant-id",
+    timeout=30,                 # per-request timeout, seconds
+    max_retries=3,
+    retry_backoff=0.5,
+    enable_compression=True,
+    max_file_size_mb=100,
+    supported_formats=["jpg", "jpeg", "png", "gif", "pdf", "html", "txt", "mp4", "avi"],
 )
 ```
 
-### API Integration Patterns
+`host`, `secret_key`, and `tenant_id` are required; the client raises `CI360ContentDeliveryValidationError` on construction if any are missing.
 
-#### Synchronous Operations
+### Authentication
+
+`CI360ContentDeliveryBase` generates a JWT on initialization (via [PyJWT](https://pyjwt.readthedocs.io/)) and attaches it to every request:
+
 ```python
-from sasci360solcontentdelivery.base import CI360ContentDeliveryBase
-
-# Initialize client
-client = CI360ContentDeliveryBase()
-
-# Get all assets
-assets = client.get_assets()
-print(f"Found {len(assets)} assets")
-
-# Upload new asset
-with open('marketing-banner.png', 'rb') as f:
-    asset_data = {
-        'name': 'Marketing Banner',
-        'description': 'Q4 Marketing Campaign Banner',
-        'type': 'image'
-    }
-    result = client.upload_asset(asset_data, f.read(), 'marketing-banner.png')
-    print(f"Uploaded asset: {result['id']}")
+headers = client.get_auth_headers()
+# {"Authorization": "Bearer ...", "Content-Type": "application/json", ...}
 ```
 
-#### Asynchronous Operations
+### Content Delivery APIs
+
+Every operation below has a synchronous method and an `_async` counterpart (e.g. `get_assets` / `get_assets_async`).
+
+```python
+# Assets
+client.get_assets(limit=50, offset=0, filters=None)
+client.get_asset(asset_id)
+client.upload_asset(asset_data, file_content, filename)
+client.update_asset(asset_id, asset_data)
+client.delete_asset(asset_id)
+
+# Delivery
+client.deliver_content(asset_id, delivery_config)
+client.get_delivery_status(delivery_id)
+client.get_deliveries(limit=50, offset=0, status_filter=None)
+
+# Templates
+client.get_content_templates(category=None, limit=50, offset=0)
+client.create_content_from_template(template_id, content_data)
+
+# Analytics
+client.get_content_analytics(asset_id=None, start_date=None, end_date=None)
+```
+
+#### Async usage
+
 ```python
 import asyncio
-from sasci360solcontentdelivery.base import CI360ContentDeliveryBase
+from sasci360solcontentdelivery.base import CI360ContentDeliveryBase, CI360ContentDeliveryConfig
 
-async def manage_assets():
-    client = CI360ContentDeliveryBase()
+async def main():
+    config = CI360ContentDeliveryConfig(
+        host="https://your-ci360-host.sas.com",
+        secret_key="your-secret-key",
+        tenant_id="your-tenant-id",
+    )
+    async with CI360ContentDeliveryBase(config) as client:
+        with open("banner.png", "rb") as f:
+            asset = await client.upload_asset_async({"name": "banner"}, f.read(), "banner.png")
+        print(asset)
 
-    # Get assets asynchronously
-    assets = await client.get_assets_async()
-    print(f"Found {len(assets)} assets")
-
-    # Upload asset asynchronously
-    with open('newsletter-template.html', 'rb') as f:
-        asset_data = {
-            'name': 'Newsletter Template',
-            'type': 'html',
-            'category': 'templates'
-        }
-        result = await client.upload_asset_async(
-            asset_data, f.read(), 'newsletter-template.html'
-        )
-        print(f"Uploaded asset: {result['id']}")
-
-# Run async operations
-asyncio.run(manage_assets())
-```
-
-#### Content Delivery
-```python
-# Deliver content to specific audience
-delivery_config = {
-    'channel': 'email',
-    'audience_segment': 'newsletter_subscribers',
-    'schedule': '2024-01-15T10:00:00Z',
-    'personalization_rules': {
-        'dynamic_content': True,
-        'location_based': True
-    }
-}
-
-result = client.deliver_content(asset_id, delivery_config)
-print(f"Content delivery scheduled: {result['delivery_id']}")
+asyncio.run(main())
 ```
 
 ### Error Handling
 
-#### Exception Types
 ```python
 from sasci360solcontentdelivery.base import (
     CI360ContentDeliveryBase,
-    CI360ContentDeliveryError,
     CI360ContentDeliveryAuthError,
-    CI360ContentDeliveryValidationError
+    CI360ContentDeliveryConnectionError,
+    CI360ContentDeliveryValidationError,
 )
 
 try:
-    client = CI360ContentDeliveryBase()
+    client = CI360ContentDeliveryBase(config)
     assets = client.get_assets()
+except CI360ContentDeliveryValidationError as e:
+    print(f"Invalid configuration: {e}")
 except CI360ContentDeliveryAuthError as e:
     print(f"Authentication failed: {e}")
-    # Handle auth issues (token refresh, credentials)
-except CI360ContentDeliveryValidationError as e:
-    print(f"Validation error: {e}")
-    # Handle input validation issues
-except CI360ContentDeliveryError as e:
-    print(f"API error: {e}")
-    # Handle general API errors
+except CI360ContentDeliveryConnectionError as e:
+    print(f"Connection error: {e}")
 ```
 
-#### Retry Logic
+All of the above inherit from `CI360ContentDeliveryError`, the base exception for the module.
+
+### Testing
+
+See [tests/test_base.py](tests/test_base.py) for the full test suite (100% line coverage on `base.py`). It mocks at the `requests.Session` boundary — the actual point this client makes HTTP calls — rather than a higher-level method, so the connection and URL-construction logic are exercised, not just the call wiring:
+
 ```python
-import time
-from tenacity import retry, stop_after_attempt, wait_exponential
+from unittest.mock import MagicMock, patch
+from sasci360solcontentdelivery.base import CI360ContentDeliveryBase, CI360ContentDeliveryConfig
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10)
-)
-def upload_with_retry(client, asset_data, file_content, filename):
-    return client.upload_asset(asset_data, file_content, filename)
+@patch("sasci360solcontentdelivery.base.requests.Session")
+def test_get_assets(mock_session_class):
+    mock_session = MagicMock()
+    mock_session.request.return_value.status_code = 200
+    mock_session.request.return_value.json.return_value = {"items": [], "total": 0}
+    mock_session_class.return_value = mock_session
 
-# Usage
-try:
-    result = upload_with_retry(client, asset_data, file_content, filename)
-except Exception as e:
-    print(f"Upload failed after retries: {e}")
+    config = CI360ContentDeliveryConfig(host="https://api.example.com", secret_key="test-secret", tenant_id="test-tenant")
+    client = CI360ContentDeliveryBase(config)
+    result = client.get_assets(limit=20)
+    assert result["total"] == 0
 ```
 
-### Testing Approaches
-
-#### Unit Testing
-```python
-import unittest
-from unittest.mock import Mock, patch
-from sasci360solcontentdelivery.base import CI360ContentDeliveryBase
-
-class TestContentDelivery(unittest.TestCase):
-    def setUp(self):
-        self.client = CI360ContentDeliveryBase()
-        self.mock_response = Mock()
-        self.mock_response.json.return_value = {'status': 'success'}
-
-    @patch('requests.Session.request')
-    def test_get_assets(self, mock_request):
-        mock_request.return_value = self.mock_response
-
-        result = self.client.get_assets()
-        self.assertEqual(result['status'], 'success')
-        mock_request.assert_called_once()
-
-    @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._generate_token')
-    def test_token_generation(self, mock_generate):
-        mock_generate.return_value = 'mock-jwt-token'
-
-        headers = self.client.get_auth_headers()
-        self.assertIn('Authorization', headers)
-        self.assertEqual(headers['Authorization'], 'Bearer mock-jwt-token')
+Run the suite with:
+```bash
+pytest tests/
 ```
 
-#### Integration Testing
-```python
-import pytest
-from sasci360solcontentdelivery.base import CI360ContentDeliveryBase
-
-@pytest.fixture
-def content_client():
-    return CI360ContentDeliveryBase()
-
-@pytest.mark.integration
-def test_asset_lifecycle(content_client):
-    # Test complete asset lifecycle
-    asset_data = {
-        'name': 'Test Asset',
-        'type': 'document',
-        'description': 'Integration test asset'
-    }
-
-    # Create
-    with open('test-file.txt', 'rb') as f:
-        created = content_client.upload_asset(asset_data, f.read(), 'test-file.txt')
-    asset_id = created['id']
-
-    # Read
-    retrieved = content_client.get_asset(asset_id)
-    assert retrieved['name'] == 'Test Asset'
-
-    # Update
-    updated_data = asset_data.copy()
-    updated_data['description'] = 'Updated description'
-    updated = content_client.update_asset(asset_id, updated_data)
-    assert updated['description'] == 'Updated description'
-
-    # Delete
-    deleted = content_client.delete_asset(asset_id)
-    assert deleted is True
-```
-
-### Performance Considerations
-
-#### Connection Pooling
-```python
-# Configure session for optimal performance
-client._session.mount('https://', requests.adapters.HTTPAdapter(
-    pool_connections=10,
-    pool_maxsize=20,
-    max_retries=3,
-    pool_block=False
-))
-```
-
-#### Batch Operations
-```python
-# Process assets in batches for better performance
-def process_assets_batch(client, asset_ids, batch_size=50):
-    for i in range(0, len(asset_ids), batch_size):
-        batch = asset_ids[i:i + batch_size]
-        # Process batch concurrently
-        tasks = [client.get_asset_async(asset_id) for asset_id in batch]
-        results = asyncio.run(asyncio.gather(*tasks))
-        yield results
-```
-
-#### Caching Strategies
-```python
-from cachetools import TTLCache
-import hashlib
-
-class CachedContentDeliveryClient(CI360ContentDeliveryBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cache = TTLCache(maxsize=1000, ttl=300)  # 5 minute TTL
-
-    def _get_cache_key(self, method, *args, **kwargs):
-        key_data = f"{method}:{args}:{kwargs}"
-        return hashlib.md5(key_data.encode()).hexdigest()
-
-    def get_asset(self, asset_id: str):
-        cache_key = self._get_cache_key('get_asset', asset_id)
-        if cache_key in self._cache:
-            return self._cache[cache_key]
-
-        result = super().get_asset(asset_id)
-        self._cache[cache_key] = result
-        return result
-```
-
-### Security Best Practices
-
-1. **Token Management**: Rotate JWT tokens regularly
-2. **Input Validation**: Validate all asset data and file uploads
-3. **Access Control**: Implement proper authorization checks
-4. **Audit Logging**: Log all asset operations for compliance
-5. **Encryption**: Use HTTPS for all API communications
+`tests/test_live_tenant.py` runs the same operations against a real tenant, skipped (not failed) unless `CI360_HOST`, `CI360_SECRET_KEY`, and `CI360_TENANT_ID` are set — see [`UAT.md`](../../UAT.md) in the repo root.
 
 ### Contributing
 
-We welcome your contributions! Please read [CONTRIBUTING](CONTRIBUTING.md) for details on how to submit contributions to this project.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md). Scope a pull request to the package(s) it actually changes, and run this package's own test suite before submitting.
 
 ### License
 
-This project is licensed under the [Nelson Grey LLC Community License 1.0](LICENSE).
+This project is licensed under the [Nelson Grey LLC Community License 1.0](../../LICENSE).
 
 - **Free for individuals, education, and research**: use, modify, and distribute this software for non-commercial purposes
 - **Commercial evaluation**: evaluate the software for a possible commercial use, free of charge
