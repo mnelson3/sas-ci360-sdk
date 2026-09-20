@@ -248,7 +248,7 @@ class CI360WorkflowBase:
                 raise CI360WorkflowConnectionError("No active connection to CI360 service")
 
         assert self.config.host is not None  # validated non-None in __init__
-        url = urljoin(self.config.host + self.config.api_base, endpoint.lstrip('/'))
+        url = f"{self.config.host.rstrip('/')}{self.config.api_base}/{endpoint.lstrip('/')}"
         headers = self.get_auth_headers()
 
         try:

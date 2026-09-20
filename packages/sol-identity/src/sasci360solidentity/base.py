@@ -21,7 +21,6 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -182,8 +181,8 @@ class CI360IdentityBase:
             bool: True if connection is valid
         """
         try:
-            # SCIM service provider config endpoint
-            sp_url = urljoin(self._base_url, "/ServiceProviderConfig")
+            # SCIM service provider config endpoint, under the SCIM base path
+            sp_url = f"{self._base_url.rstrip('/')}/ServiceProviderConfig"
             headers = self.get_auth_headers()
 
             loop = asyncio.get_event_loop()
@@ -246,7 +245,7 @@ class CI360IdentityBase:
             if not self._connected:
                 raise CI360IdentityConnectionError("No active connection to CI360 service")
 
-        url = urljoin(self._base_url, endpoint.lstrip('/'))
+        url = f"{self._base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         headers = self.get_auth_headers()
 
         try:
