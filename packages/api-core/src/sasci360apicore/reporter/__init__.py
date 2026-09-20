@@ -4,6 +4,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import Optional
 
 
 class Reporter:
@@ -21,14 +22,14 @@ class Reporter:
 
 		self.root = kwargs["root"]
 
-	def save(self, **kwargs) -> Path:
+	def save(self, **kwargs) -> Optional[Path]:
 		"""
 		Save
 		:keyword folder:
 		:keyword name:
 		:keyword data:
 		:return:
-		:rtype: Path
+		:rtype: Optional[Path]
 		"""
 		root = self.root
 		json_file = None

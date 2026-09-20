@@ -4,10 +4,10 @@
 import json
 import logging
 import os
-import csv
 import pandas
 import saspy
 from pathlib import Path
+from typing import Optional
 
 
 class Data:
@@ -18,7 +18,7 @@ class Data:
 	def __init__(self) -> None:
 		self.logger = logging.getLogger(__name__)
 
-	def create_csv(self, **kwargs) -> csv:
+	def create_csv(self, **kwargs) -> None:
 		"""
 		Read unzipped file line-by-line, replace delimiter and output csv file
 		:keyword in_file: file, required -
@@ -26,7 +26,7 @@ class Data:
 		:keyword in_delimiter: str, required -
 		:keyword out_delimiter: str, required -
 		:keyword is_header: bool, required -
-		:return: csv
+		:return: None
 		"""
 		result = None
 		error = 0
@@ -56,7 +56,7 @@ class Data:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
 		return result
 
-	def create_sas_dataset(self, **kwargs) -> saspy.SASdata:
+	def create_sas_dataset(self, **kwargs) -> Optional[saspy.SASdata]:
 		"""
 		Create SAS Dataset
 		:keyword in_file: file, required -

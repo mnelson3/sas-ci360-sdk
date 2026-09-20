@@ -3,6 +3,7 @@
 
 import base64
 import logging
+from typing import Optional
 
 import jwt
 
@@ -25,13 +26,13 @@ class Encryption:
 		self.algorithm = kwargs["algorithm"]
 		self.encoding = kwargs["encoding"]
 
-	def generate_jwt(self, **kwargs) -> str:
+	def generate_jwt(self, **kwargs) -> Optional[str]:
 		"""
 		Generate JSON Web Token
 		:keyword secret_key: str, required -
 		:keyword tenant_id: str, required -
 		:return:
-		:rtype: str
+		:rtype: Optional[str]
 		"""
 		result = None
 		try:
