@@ -29,6 +29,7 @@ from sasci360solidentity.base import (  # noqa: E402
     CI360IdentityAuthError,
     CI360IdentityBase,
     CI360IdentityConfig,
+    CI360IdentityError,
     CI360IdentityValidationError,
 )
 
@@ -142,6 +143,177 @@ class TestCI360IdentityBase(unittest.TestCase):
         self.assertEqual(headers["Authorization"], "Bearer test-token")
         self.assertEqual(headers["X-Tenant-ID"], "test-tenant-id")
         self.assertEqual(headers["SCIM-Version"], "2.0")
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_generate_token_wraps_any_failure_as_auth_error(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.side_effect = RuntimeError("bad key")
+
+        with self.assertRaises(CI360IdentityAuthError):
+            CI360IdentityBase(self.config)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_validate_connection_async_true_on_200(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = MagicMock(status_code=200)
+
+        client = CI360IdentityBase(self.config)
+        result = asyncio.run(client.validate_connection_async())
+
+        self.assertTrue(result)
+        self.assertTrue(client._connected)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_validate_connection_async_false_on_non_200(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = MagicMock(status_code=503)
+
+        client = CI360IdentityBase(self.config)
+        result = asyncio.run(client.validate_connection_async())
+
+        self.assertFalse(result)
+        self.assertFalse(client._connected)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_validate_connection_async_false_when_session_raises(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.side_effect = ConnectionError("refused")
+
+        client = CI360IdentityBase(self.config)
+
+        self.assertFalse(asyncio.run(client.validate_connection_async()))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_validate_connection_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = MagicMock(status_code=200)
+
+        client = CI360IdentityBase(self.config)
+
+        self.assertTrue(client.validate_connection())
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.asyncio.run')
+    def test_validate_connection_sync_false_when_asyncio_run_raises(
+        self, mock_asyncio_run, mock_encryption_class, mock_session_class
+    ):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360IdentityBase(self.config)
+        mock_asyncio_run.side_effect = RuntimeError("loop already running")
+
+        self.assertFalse(client.validate_connection())
+
+    def _connected_client(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360IdentityBase(self.config)
+        client._connected = True
+        return client, mock_session_class.return_value
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_returns_parsed_json_on_success(self, mock_encryption_class, mock_session_class):
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = MagicMock(content=b'{"ok": true}')
+        response.json.return_value = {"ok": True}
+        mock_session.request.return_value = response
+
+        result = asyncio.run(client._make_request_async("GET", "/Users"))
+
+        self.assertEqual(result, {"ok": True})
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_reconnects_when_not_connected(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360IdentityBase(self.config)
+        mock_session = mock_session_class.return_value
+        mock_session.get.return_value = MagicMock(status_code=200)
+        response = MagicMock(content=b'{"ok": true}')
+        response.json.return_value = {"ok": True}
+        mock_session.request.return_value = response
+
+        result = asyncio.run(client._make_request_async("GET", "/Users"))
+
+        self.assertEqual(result, {"ok": True})
+        mock_session.get.assert_called_once()
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_raises_connection_error_when_reconnect_fails(
+        self, mock_encryption_class, mock_session_class
+    ):
+        from sasci360solidentity.base import CI360IdentityConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360IdentityBase(self.config)
+        mock_session_class.return_value.get.return_value = MagicMock(status_code=503)
+
+        with self.assertRaises(CI360IdentityConnectionError):
+            asyncio.run(client._make_request_async("GET", "/Users"))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_401_raises_auth_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = MagicMock(status_code=401)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("401")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360IdentityAuthError):
+            asyncio.run(client._make_request_async("GET", "/Users"))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_5xx_raises_connection_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        from sasci360solidentity.base import CI360IdentityConnectionError
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = MagicMock(status_code=503)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("503")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360IdentityConnectionError):
+            asyncio.run(client._make_request_async("GET", "/Users"))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_other_4xx_raises_generic_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = MagicMock(status_code=404)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("404")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360IdentityError):
+            asyncio.run(client._make_request_async("GET", "/Users"))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    def test_make_request_async_network_error_raises_connection_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        from sasci360solidentity.base import CI360IdentityConnectionError
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        mock_session.request.side_effect = requests_module.exceptions.ConnectionError("refused")
+
+        with self.assertRaises(CI360IdentityConnectionError):
+            asyncio.run(client._make_request_async("GET", "/Users"))
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_make_request_sync_logs_and_reraises(self, mock_request_async, mock_encryption_class, mock_session_class):
+        from sasci360solidentity.base import CI360IdentityConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360IdentityBase(self.config)
+        mock_request_async.side_effect = CI360IdentityConnectionError("down")
+
+        with self.assertRaises(CI360IdentityConnectionError):
+            client._make_request("GET", "/Users")
 
     # User Management Tests
 
@@ -432,6 +604,204 @@ class TestCI360IdentityBase(unittest.TestCase):
 
         self.assertEqual(result["accessToken"], "jwt-token")
 
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_users_sync_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"Resources": []}
+        client = CI360IdentityBase(self.config)
+
+        client.get_users(limit=10, offset=5, filters={"active": True})
+
+        mock_request.assert_called_once_with(
+            "GET", "/Users", None, {"limit": 10, "offset": 5, "active": True}
+        )
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_users_async_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"Resources": []}
+        client = CI360IdentityBase(self.config)
+
+        asyncio.run(client.get_users_async(filters={"active": True}))
+
+        mock_request.assert_called_once_with(
+            "GET", "/Users", params={"limit": 100, "offset": 0, "active": True}
+        )
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_user_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "user-1"}
+        client = CI360IdentityBase(self.config)
+
+        client.get_user("user-1")
+
+        mock_request.assert_called_once_with("GET", "/Users/user-1", None, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_update_user_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "user-1"}
+        client = CI360IdentityBase(self.config)
+
+        client.update_user("user-1", {"name": {"givenName": "Jane"}})
+
+        mock_request.assert_called_once_with("PUT", "/Users/user-1", {"name": {"givenName": "Jane"}}, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_patch_user_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "user-1"}
+        client = CI360IdentityBase(self.config)
+        patch_data = {"Operations": []}
+
+        asyncio.run(client.patch_user_async("user-1", patch_data))
+        mock_request.assert_called_with("PATCH", "/Users/user-1", data=patch_data)
+
+        client.patch_user("user-1", patch_data)
+        mock_request.assert_called_with("PATCH", "/Users/user-1", patch_data, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_delete_user_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = None
+        client = CI360IdentityBase(self.config)
+
+        self.assertTrue(client.delete_user("user-1"))
+        mock_request.assert_called_once_with("DELETE", "/Users/user-1", None, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_groups_sync_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"Resources": []}
+        client = CI360IdentityBase(self.config)
+
+        client.get_groups(limit=20, offset=10, filters={"displayName": "Marketing"})
+
+        mock_request.assert_called_once_with(
+            "GET", "/Groups", None, {"limit": 20, "offset": 10, "displayName": "Marketing"}
+        )
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_groups_async_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"Resources": []}
+        client = CI360IdentityBase(self.config)
+
+        asyncio.run(client.get_groups_async(filters={"displayName": "Marketing"}))
+
+        mock_request.assert_called_once_with(
+            "GET", "/Groups", params={"limit": 100, "offset": 0, "displayName": "Marketing"}
+        )
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_group_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "group-1"}
+        client = CI360IdentityBase(self.config)
+
+        asyncio.run(client.get_group_async("group-1"))
+        mock_request.assert_called_with("GET", "/Groups/group-1")
+
+        client.get_group("group-1")
+        mock_request.assert_called_with("GET", "/Groups/group-1", None, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_create_group_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "group-1"}
+        client = CI360IdentityBase(self.config)
+
+        client.create_group({"displayName": "Team"})
+
+        mock_request.assert_called_once_with("POST", "/Groups", {"displayName": "Team"}, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_update_group_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"id": "group-1"}
+        client = CI360IdentityBase(self.config)
+
+        asyncio.run(client.update_group_async("group-1", {"displayName": "New"}))
+        mock_request.assert_called_with("PUT", "/Groups/group-1", data={"displayName": "New"})
+
+        client.update_group("group-1", {"displayName": "New"})
+        mock_request.assert_called_with("PUT", "/Groups/group-1", {"displayName": "New"}, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_delete_group_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = None
+        client = CI360IdentityBase(self.config)
+
+        self.assertTrue(client.delete_group("group-1"))
+        mock_request.assert_called_once_with("DELETE", "/Groups/group-1", None, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_validate_token_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"valid": True}
+        client = CI360IdentityBase(self.config)
+
+        result = client.validate_token("jwt-token")
+
+        self.assertTrue(result["valid"])
+        mock_request.assert_called_once_with("POST", "/auth/validate", {"token": "jwt-token"}, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_refresh_token_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"accessToken": "new-token"}
+        client = CI360IdentityBase(self.config)
+
+        client.refresh_token("old-refresh-token")
+
+        mock_request.assert_called_once_with(
+            "POST", "/auth/refresh", {"refreshToken": "old-refresh-token"}, None
+        )
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_get_service_provider_config_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"patch": {"supported": True}}
+        client = CI360IdentityBase(self.config)
+
+        result = client.get_service_provider_config()
+
+        self.assertTrue(result["patch"]["supported"])
+        mock_request.assert_called_once_with("GET", "/ServiceProviderConfig", None, None)
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase._make_request_async')
+    def test_bulk_operation_sync(self, mock_request, mock_encryption_class, mock_session_class):
+        mock_request.return_value = {"Operations": []}
+        client = CI360IdentityBase(self.config)
+        operations = [{"method": "DELETE", "path": "/Users/user-1"}]
+
+        client.bulk_operation(operations)
+
+        mock_request.assert_called_once_with(
+            "POST", "/Bulk",
+            {"schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"], "Operations": operations},
+            None,
+        )
+
     # Context manager tests
 
     @patch('sasci360solidentity.base.requests.Session')
@@ -458,6 +828,42 @@ class TestCI360IdentityBase(unittest.TestCase):
         with self.assertRaises(Exception):
             with CI360IdentityBase(self.config):
                 pass
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase.validate_connection_async')
+    def test_async_context_manager_success(self, mock_validate, mock_encryption_class, mock_session_class):
+        async def _mock_validate():
+            return True
+        mock_validate.side_effect = _mock_validate
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        async def _run():
+            async with CI360IdentityBase(self.config) as client:
+                return client
+
+        client = asyncio.run(_run())
+
+        self.assertIsInstance(client, CI360IdentityBase)
+        mock_session.close.assert_called_once()
+
+    @patch('sasci360solidentity.base.requests.Session')
+    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360solidentity.base.CI360IdentityBase.validate_connection_async')
+    def test_async_context_manager_connection_failure(self, mock_validate, mock_encryption_class, mock_session_class):
+        from sasci360solidentity.base import CI360IdentityConnectionError
+
+        async def _mock_validate():
+            return False
+        mock_validate.side_effect = _mock_validate
+
+        async def _run():
+            async with CI360IdentityBase(self.config):
+                pass
+
+        with self.assertRaises(CI360IdentityConnectionError):
+            asyncio.run(_run())
 
 
 class TestCI360IdentityErrorHandling(unittest.TestCase):
