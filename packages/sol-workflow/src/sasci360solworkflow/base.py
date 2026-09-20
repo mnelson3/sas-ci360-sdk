@@ -20,14 +20,17 @@ and workflow automation capabilities.
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
-import jwt
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+try:
+    from sasci360apicore.encryption import Encryption
+except ImportError:  # pragma: no cover - optional dependency, only needed at runtime
+    Encryption = None
 
 
 @dataclass
@@ -46,7 +49,6 @@ class CI360WorkflowConfig:
     enable_compression: bool = True
     max_concurrent_workflows: int = 50
     workflow_timeout: int = 7200
-    token_ttl: int = 3600
 
 
 class CI360WorkflowError(Exception):
@@ -140,17 +142,20 @@ class CI360WorkflowBase:
 
     def _generate_token(self) -> str:
         """Generate JWT authentication token."""
+        if Encryption is None:
+            raise CI360WorkflowAuthError(
+                "sasci360apicore is required to generate authentication tokens"
+            )
+
         try:
-            now = datetime.now(timezone.utc)
-            payload = {
-                "tenant_id": self.config.tenant_id,
-                "iat": now,
-                "exp": now + timedelta(seconds=self.config.token_ttl),
-            }
-            return jwt.encode(
-                payload,
-                self.config.secret_key,
+            encryption = Encryption(
                 algorithm=self.config.algorithm,
+                encoding=self.config.encoding
+            )
+
+            return encryption.generate_jwt(
+                tenant_id=self.config.tenant_id,
+                secret_key=self.config.secret_key
             )
         except Exception as e:
             raise CI360WorkflowAuthError(f"Failed to generate authentication token: {e}")

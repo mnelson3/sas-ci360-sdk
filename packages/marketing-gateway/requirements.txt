@@ -4,5 +4,5 @@ requests>=2.27.1
 saspy>=4.2.0
 schedule>=1.1.0
 DateTime>=4.3
-sasci360apicore @ git+https://github.com/mnelson3/sas_ci360_api_core.git@main
-urllib3>=1.26.9
+sasci360apicore @ git+https://github.com/mnelson3/sas-ci360-sdk.git@main#subdirectory=packages/api-core
+urllib3>=2.0.0

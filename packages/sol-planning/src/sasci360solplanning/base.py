@@ -20,14 +20,17 @@ and campaign planning capabilities.
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-import jwt
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+try:
+    from sasci360apicore.encryption import Encryption
+except ImportError:  # pragma: no cover - optional dependency, only needed at runtime
+    Encryption = None
 
 
 @dataclass
@@ -66,24 +69,6 @@ class CI360PlanningConnectionError(CI360PlanningError):
 class CI360PlanningValidationError(CI360PlanningError):
     """Data validation errors."""
     pass
-
-
-class Encryption:
-    """Generates signed JWTs for CI360 Planning API authentication."""
-
-    def __init__(self, algorithm: str = "HS256", encoding: str = "utf-8") -> None:
-        self.algorithm = algorithm
-        self.encoding = encoding
-
-    def generate_jwt(self, tenant_id: str, secret_key: str) -> str:
-        """Generate a signed JWT scoped to the given tenant."""
-        now = datetime.now(timezone.utc)
-        payload = {
-            "tenant_id": tenant_id,
-            "iat": now,
-            "exp": now + timedelta(hours=1),
-        }
-        return jwt.encode(payload, secret_key, algorithm=self.algorithm)
 
 
 class CI360PlanningBase:
@@ -157,6 +142,11 @@ class CI360PlanningBase:
 
     def _generate_token(self) -> str:
         """Generate JWT authentication token."""
+        if Encryption is None:
+            raise CI360PlanningAuthError(
+                "sasci360apicore is required to generate authentication tokens"
+            )
+
         try:
             encryption = Encryption(
                 algorithm=self.config.algorithm,

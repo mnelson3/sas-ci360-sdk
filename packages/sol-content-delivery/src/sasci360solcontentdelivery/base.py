@@ -177,7 +177,8 @@ class CI360ContentDeliveryBase:
             bool: True if connection is valid
         """
         try:
-            # Basic health check endpoint
+            # Basic health check endpoint; config.host is validated non-None in __init__
+            assert self.config.host is not None
             health_url = urljoin(self.config.host, "/health")
             headers = self.get_auth_headers()
 
@@ -241,6 +242,7 @@ class CI360ContentDeliveryBase:
             if not self._connected:
                 raise CI360ContentDeliveryConnectionError("No active connection to CI360 service")
 
+        assert self.config.host is not None  # validated non-None in __init__
         url = urljoin(self.config.host + self.config.api_base, endpoint.lstrip('/'))
         headers = self.get_auth_headers()
 
@@ -383,6 +385,7 @@ class CI360ContentDeliveryBase:
         headers = self.get_auth_headers()
         headers['Content-Type'] = encoder.content_type
 
+        assert self.config.host is not None  # validated non-None in __init__
         url = urljoin(self.config.host + self.config.api_base, "/assets/upload")
 
         loop = asyncio.get_event_loop()
@@ -502,7 +505,7 @@ class CI360ContentDeliveryBase:
         Returns:
             Dict containing list of deliveries
         """
-        params = {
+        params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset
         }
@@ -518,7 +521,7 @@ class CI360ContentDeliveryBase:
         status_filter: Optional[str] = None
     ) -> Dict[str, Any]:
         """List content deliveries synchronously."""
-        params = {
+        params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset
         }
@@ -546,7 +549,7 @@ class CI360ContentDeliveryBase:
         Returns:
             Dict containing content templates
         """
-        params = {
+        params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset
         }
@@ -562,7 +565,7 @@ class CI360ContentDeliveryBase:
         offset: int = 0
     ) -> Dict[str, Any]:
         """Retrieve content templates synchronously."""
-        params = {
+        params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset
         }
