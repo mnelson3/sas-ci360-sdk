@@ -8,6 +8,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Optional
 
 
 class Communication:
@@ -51,12 +52,12 @@ class Communication:
 		login = self.email_server_login
 		password = self.email_server_password
 
-		email_msg_from = None
-		email_msg_to = None
-		email_msg_cc = None
-		email_msg_bcc = None
-		email_msg_subject = None
-		email_msg_body = None
+		email_msg_from: Optional[str] = None
+		email_msg_to: Optional[str] = None
+		email_msg_cc: Optional[str] = None
+		email_msg_bcc: Optional[str] = None
+		email_msg_subject: Optional[str] = None
+		email_msg_body: Optional[str] = None
 		email_msg_attachment = None
 		try:
 			if "email_msg_from" in kwargs:
@@ -75,14 +76,19 @@ class Communication:
 				email_msg_attachment = kwargs["email_msg_attachment"]
 
 			message = MIMEMultipart()
-			message["From"] = email_msg_from
-			message["To"] = email_msg_to
-			message["CC"] = email_msg_cc
-			message["BCC"] = email_msg_bcc
-			message["Subject"] = email_msg_subject
+			if email_msg_from is not None:
+				message["From"] = email_msg_from
+			if email_msg_to is not None:
+				message["To"] = email_msg_to
+			if email_msg_cc is not None:
+				message["CC"] = email_msg_cc
+			if email_msg_bcc is not None:
+				message["BCC"] = email_msg_bcc
+			if email_msg_subject is not None:
+				message["Subject"] = email_msg_subject
 
 			# Add body to email
-			message.attach(MIMEText(email_msg_body, "plain"))
+			message.attach(MIMEText(email_msg_body or "", "plain"))
 
 			if email_msg_attachment is not None:
 				filename = email_msg_attachment
@@ -107,7 +113,7 @@ class Communication:
 			context = ssl.create_default_context()
 			with smtplib.SMTP_SSL(host=host, port=port, context=context) as server:
 				server.login(login, password)
-				server.sendmail(email_msg_from, email_msg_to, text)
+				server.sendmail(email_msg_from or "", email_msg_to or "", text)
 			server.close()
 		except (smtplib.SMTPException, OSError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
