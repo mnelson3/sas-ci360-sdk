@@ -41,10 +41,13 @@ class Data:
 			with open(file=in_file, mode="r", encoding="utf8") as in_f, open(file=out_file, mode="a", encoding="utf8") as out_f:
 				rows = 0
 				for line in in_f:
-					# print column header line in csv file if flag is yes
+					# write the column header line, delimiter-converted like every
+					# other row, once, then process only data rows
 					if is_header:
-						out_f.write(line + "\n")
+						out_f.write(line.replace("|", "-").replace(in_delimiter, out_delimiter))
 						rows = 1
+						is_header = False
+						continue
 					try:
 						line = line.replace("|", "-").replace(in_delimiter, out_delimiter)
 						out_f.write(line)
@@ -52,6 +55,8 @@ class Data:
 					except IOError as e:
 						error = error + 1
 						error_msg = error_msg + "\nerror in row: " + str(rows) + " - " + str(e)
+				if error:
+					self.logger.warning("{0} row(s) failed to write: {1}".format(error, error_msg))
 		except (KeyError, OSError) as e:
 			self.logger.exception("Exception occurred: {}".format(str(e)))
 		return result
