@@ -19,9 +19,9 @@ Discover is CI360's cloud data-mart download capability — the mechanism the id
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| `MARKETINGGATEWAY-BG-1` | Download Discover data-mart extracts with delta and time-range filtering. | API surface parity with CI360's Marketing Gateway API |
-| `MARKETINGGATEWAY-BG-2` | `pip install` this package alone must actually pull in everything it needs. | 0 `MARKETINGGATEWAY-NFR-8` violations (1 was found and fixed — see TRD.md) |
-| `MARKETINGGATEWAY-BG-3` | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT test present (achieved 2026-09-20) |
+| MARKETINGGATEWAY-BG-1 | Download Discover data-mart extracts with delta and time-range filtering. | API surface parity with CI360's Marketing Gateway API |
+| MARKETINGGATEWAY-BG-2 | `pip install` this package alone must actually pull in everything it needs. | 0 MARKETINGGATEWAY-NFR-8 violations (1 was found and fixed — see TRD.md) |
+| MARKETINGGATEWAY-BG-3 | Every operation additionally verifiable against a real tenant, opt-in. | Live-tenant UAT test present (achieved 2026-09-20) |
 
 ## 4. Stakeholders
 
@@ -40,8 +40,8 @@ A `sol-*`-generation rewrite of this package is not in scope for this iteration 
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| `MARKETINGGATEWAY-BR-1` | This package's declared dependencies must actually cover everything its code imports. | P1 (real bug found and fixed, see TRD.md) |
-| `MARKETINGGATEWAY-BR-2` | `host` for this package's constructor is a bare hostname (this client builds its own `https://` prefix) — different from the `sol-*` packages' config, which needs the scheme included. | P2 (a real convention gap, documented; see [sas-ci360-sdk/IMPLEMENTER_GUIDE.md](../../../IMPLEMENTER_GUIDE.md) §3) |
+| MARKETINGGATEWAY-BR-1 | This package's declared dependencies must actually cover everything its code imports. | P1 (real bug found and fixed, see TRD.md) |
+| MARKETINGGATEWAY-BR-2 | `host` for this package's constructor is a bare hostname (this client builds its own `https://` prefix) — different from the `sol-*` packages' config, which needs the scheme included. | P2 (a real convention gap, documented; see [sas-ci360-sdk/IMPLEMENTER_GUIDE.md](../../../IMPLEMENTER_GUIDE.md) §3) |
 
 ## 7. Success metrics
 

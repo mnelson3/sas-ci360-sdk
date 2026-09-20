@@ -19,9 +19,9 @@ Before consolidation, this logic was duplicated across three generations of the 
 
 | ID | Objective | Primary metric |
 | --- | --- | --- |
-| `APICORE-BG-1` | Every domain client can generate a valid, CI360-accepted JWT from just a tenant ID and secret. | 0 auth failures traceable to this package's `Encryption` class |
-| `APICORE-BG-2` | Every domain client gets retry-on-transient-failure without implementing it itself. | Identical `Retry`+`HTTPAdapter` config reused everywhere |
-| `APICORE-BG-3` | Stay small and dependency-light — this package's own dependency list must actually match what it imports. | 0 `APICORE-NFR-8` violations (see TRD.md) |
+| APICORE-BG-1 | Every domain client can generate a valid, CI360-accepted JWT from just a tenant ID and secret. | 0 auth failures traceable to this package's `Encryption` class |
+| APICORE-BG-2 | Every domain client gets retry-on-transient-failure without implementing it itself. | Identical `Retry`+`HTTPAdapter` config reused everywhere |
+| APICORE-BG-3 | Stay small and dependency-light — this package's own dependency list must actually match what it imports. | 0 APICORE-NFR-8 violations (see TRD.md) |
 
 ## 4. Stakeholders
 
@@ -46,9 +46,9 @@ Before consolidation, this logic was duplicated across three generations of the 
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| `APICORE-BR-1` | `Encryption.generate_jwt()` must produce a token CI360 actually accepts, from just `secret_key` and `tenant_id`. | P1 |
-| `APICORE-BR-2` | This package's own `install_requires` must not silently omit a dependency it needs — see the real bug fixed 2026-09-20 in TRD.md. | P1 |
-| `APICORE-BR-3` | No credential-shaped value may appear in this package's source, tests, or fixtures. | P1 |
+| APICORE-BR-1 | `Encryption.generate_jwt()` must produce a token CI360 actually accepts, from just `secret_key` and `tenant_id`. | P1 |
+| APICORE-BR-2 | This package's own `install_requires` must not silently omit a dependency it needs — see the real bug fixed 2026-09-20 in TRD.md. | P1 |
+| APICORE-BR-3 | No credential-shaped value may appear in this package's source, tests, or fixtures. | P1 |
 
 ## 7. Success metrics
 
