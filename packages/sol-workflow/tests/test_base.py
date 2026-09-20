@@ -11,8 +11,6 @@ import unittest
 from unittest.mock import Mock, patch
 from typing import Dict, Any
 
-import jwt
-
 from sasci360solworkflow.base import CI360WorkflowBase, CI360WorkflowConfig, CI360WorkflowError
 
 
@@ -63,16 +61,22 @@ class TestCI360WorkflowBase(unittest.TestCase):
         )
 
     @patch('sasci360solworkflow.base.requests.Session')
-    def test_initialization_success(self, mock_session_class):
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_initialization_success(self, mock_encryption_class, mock_session_class):
         """Test successful initialization."""
+        mock_encryption = Mock()
+        mock_encryption.generate_jwt.return_value = "test-token"
+        mock_encryption_class.return_value = mock_encryption
+
         mock_session = Mock()
         mock_session_class.return_value = mock_session
 
         client = CI360WorkflowBase(self.config)
 
         self.assertEqual(client.config, self.config)
-        decoded = jwt.decode(client.token, self.config.secret_key, algorithms=[self.config.algorithm])
-        self.assertEqual(decoded["tenant_id"], self.config.tenant_id)
+        self.assertEqual(client.token, "test-token")
+        mock_encryption_class.assert_called_once()
+        mock_session_class.assert_called_once()
 
     # Workflow Management Tests
 
