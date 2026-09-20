@@ -246,7 +246,7 @@ class CI360PlanningBase:
             if not self._connected:
                 raise CI360PlanningConnectionError("No active connection to CI360 service")
 
-        url = urljoin(str(self.config.host) + self.config.api_base, endpoint.lstrip('/'))
+        url = f"{str(self.config.host).rstrip('/')}{self.config.api_base}/{endpoint.lstrip('/')}"
         headers = self.get_auth_headers()
 
         try:
