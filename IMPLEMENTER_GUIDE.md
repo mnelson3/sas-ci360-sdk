@@ -101,7 +101,7 @@ except CI360DataConnectionError:
     raise
 ```
 
-Retry on 429/500/502/503/504 already happens inside the client (`NFR-1`, `Retry`-mounted `HTTPAdapter`) — you don't need to implement your own retry loop for those.
+Retry on 429/500/502/503/504 already happens inside the client (`CI360SDK-NFR-1`, `Retry`-mounted `HTTPAdapter`) — you don't need to implement your own retry loop for those.
 
 ## 7. Composing multiple clients
 
