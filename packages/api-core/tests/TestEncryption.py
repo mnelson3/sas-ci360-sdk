@@ -35,17 +35,12 @@ class TestEncryption(unittest.TestCase):
 		secret_key = self.secret_key_dev
 		tenant_id = self.tenant_id_dev
 
-		print("algorithm : {0}".format(algorithm))
 		self.assertEqual(algorithm, "HS256")
-		print("encoding : {0}".format(encoding))
 		self.assertEqual(encoding, "UTF-8")
-		print("secret_key : {0}".format(secret_key))
 		self.assertEqual(secret_key, "example-secret-key-dev")
-		print("tenant_id : {0}".format(tenant_id))
 		self.assertEqual(tenant_id, "example-tenant-id-dev")
 
 		result = self.encryption.generate_jwt(tenant_id=tenant_id, secret_key=secret_key)
-		print("result : {0}".format(result))
 		self.assertEqual(result, self.dev_token)
 
 	def test_generate_jwt_test(self):
@@ -54,17 +49,12 @@ class TestEncryption(unittest.TestCase):
 		secret_key = self.secret_key_test
 		tenant_id = self.tenant_id_test
 
-		print("algorithm : {0}".format(algorithm))
 		self.assertEqual(algorithm, "HS256")
-		print("encoding : {0}".format(encoding))
 		self.assertEqual(encoding, "UTF-8")
-		print("secret_key : {0}".format(secret_key))
 		self.assertEqual(secret_key, "example-secret-key-test")
-		print("tenant_id : {0}".format(tenant_id))
 		self.assertEqual(tenant_id, "example-tenant-id-test")
 
 		result = self.encryption.generate_jwt(tenant_id=tenant_id, secret_key=secret_key)
-		print("result : {0}".format(result))
 		self.assertEqual(result, self.test_token)
 
 	def test_generate_jwt_production(self):
@@ -73,17 +63,12 @@ class TestEncryption(unittest.TestCase):
 		secret_key = self.secret_key_prod
 		tenant_id = self.tenant_id_prod
 
-		print("algorithm : {0}".format(algorithm))
 		self.assertEqual(algorithm, "HS256")
-		print("encoding : {0}".format(encoding))
 		self.assertEqual(encoding, "UTF-8")
-		print("secret_key : {0}".format(secret_key))
 		self.assertEqual(secret_key, "example-secret-key-prod")
-		print("tenant_id : {0}".format(tenant_id))
 		self.assertEqual(tenant_id, "example-tenant-id-prod")
 
 		result = self.encryption.generate_jwt(tenant_id=tenant_id, secret_key=secret_key)
-		print("result : {0}".format(result))
 		self.assertEqual(result, self.prod_token)
 
 

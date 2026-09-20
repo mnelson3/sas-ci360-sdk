@@ -49,13 +49,9 @@ class TestConnection(unittest.TestCase):
 		secret_key = self.secret_key_dev
 		tenant_id = self.tenant_id_dev
 
-		print("algorithm : {0}".format(algorithm))
 		self.assertEqual(algorithm, "HS256")
-		print("encoding : {0}".format(encoding))
 		self.assertEqual(encoding, "UTF-8")
-		print("secret_key : {0}".format(secret_key))
 		self.assertEqual(secret_key, "example-secret-key-dev")
-		print("tenant_id : {0}".format(tenant_id))
 		self.assertEqual(tenant_id, "example-tenant-id-dev")
 
 		token = self.encryption.generate_jwt(secret_key=secret_key, tenant_id=tenant_id)
@@ -90,7 +86,6 @@ class TestConnection(unittest.TestCase):
 		)
 		result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 		self.assertIsNotNone(result)
-		print("result : {0}".format(result))
 
 	def test_patch(self):
 		pass
@@ -99,9 +94,7 @@ class TestConnection(unittest.TestCase):
 	def test_post(self, mock_post):
 		mock_post.return_value = MagicMock(status_code=200)
 		secret_key = self.secret_key_dev
-		print("secret_key : {0}".format(secret_key))
 		tenant_id = self.tenant_id_dev
-		print("tenant_id : {0}".format(tenant_id))
 
 		token = self.encryption.generate_jwt(secret_key=secret_key, tenant_id=tenant_id)
 		self.assertEqual(token, self.dev_token)
@@ -128,7 +121,6 @@ class TestConnection(unittest.TestCase):
 		self.assertEqual(url, "https://example.api.gateway.invalid/marketingData/fileTransferLocation")
 		result = self.connection.connect(action=action, data=data, headers=headers, params=params, url=url)
 		self.assertIsNotNone(result)
-		print("result : {0}".format(result))
 
 	def test_put(self):
 		pass
