@@ -9,7 +9,6 @@ Comprehensive test suite for the CI360WorkflowBase class and its APIs.
 import asyncio
 import unittest
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
 from sasci360solworkflow.base import CI360WorkflowBase, CI360WorkflowConfig, CI360WorkflowError
 
@@ -77,6 +76,265 @@ class TestCI360WorkflowBase(unittest.TestCase):
         self.assertEqual(client.token, "test-token")
         mock_encryption_class.assert_called_once()
         mock_session_class.assert_called_once()
+
+    def test_initialization_missing_config(self):
+        with self.assertRaises(CI360WorkflowError):
+            CI360WorkflowBase(CI360WorkflowConfig())
+
+    def test_initialization_unsupported_algorithm(self):
+        config = CI360WorkflowConfig(
+            host="https://api.example.com", secret_key="s", tenant_id="t", algorithm="MD5"
+        )
+        with self.assertRaises(CI360WorkflowError):
+            CI360WorkflowBase(config)
+
+    def test_initialization_non_positive_max_concurrent_workflows(self):
+        config = CI360WorkflowConfig(
+            host="https://api.example.com", secret_key="s", tenant_id="t", max_concurrent_workflows=0
+        )
+        with self.assertRaises(CI360WorkflowError):
+            CI360WorkflowBase(config)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption', None)
+    def test_generate_token_raises_auth_error_when_encryption_unavailable(self, mock_session_class):
+        from sasci360solworkflow.base import CI360WorkflowAuthError
+        with self.assertRaises(CI360WorkflowAuthError):
+            CI360WorkflowBase(self.config)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_generate_token_wraps_any_failure_as_auth_error(self, mock_encryption_class, mock_session_class):
+        from sasci360solworkflow.base import CI360WorkflowAuthError
+        mock_encryption_class.return_value.generate_jwt.side_effect = RuntimeError("bad key")
+
+        with self.assertRaises(CI360WorkflowAuthError):
+            CI360WorkflowBase(self.config)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_get_auth_headers(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-jwt-token"
+
+        client = CI360WorkflowBase(self.config)
+        headers = client.get_auth_headers()
+
+        self.assertEqual(headers["Authorization"], "Bearer test-jwt-token")
+        self.assertEqual(headers["X-Tenant-ID"], "test-tenant-id")
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_validate_connection_async_true_on_200(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = Mock(status_code=200)
+
+        client = CI360WorkflowBase(self.config)
+        result = asyncio.run(client.validate_connection_async())
+
+        self.assertTrue(result)
+        self.assertTrue(client._connected)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_validate_connection_async_false_on_non_200(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = Mock(status_code=503)
+
+        client = CI360WorkflowBase(self.config)
+        result = asyncio.run(client.validate_connection_async())
+
+        self.assertFalse(result)
+        self.assertFalse(client._connected)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_validate_connection_async_false_when_session_raises(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.side_effect = ConnectionError("refused")
+
+        client = CI360WorkflowBase(self.config)
+
+        self.assertFalse(asyncio.run(client.validate_connection_async()))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_validate_connection_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = Mock(status_code=200)
+
+        client = CI360WorkflowBase(self.config)
+
+        self.assertTrue(client.validate_connection())
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    @patch('sasci360solworkflow.base.asyncio.run')
+    def test_validate_connection_sync_false_when_asyncio_run_raises(
+        self, mock_asyncio_run, mock_encryption_class, mock_session_class
+    ):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360WorkflowBase(self.config)
+        mock_asyncio_run.side_effect = RuntimeError("loop already running")
+
+        self.assertFalse(client.validate_connection())
+
+    def _connected_client(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360WorkflowBase(self.config)
+        client._connected = True
+        return client, mock_session_class.return_value
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_returns_parsed_json_on_success(self, mock_encryption_class, mock_session_class):
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = Mock(content=b'{"ok": true}')
+        response.json.return_value = {"ok": True}
+        mock_session.request.return_value = response
+
+        result = asyncio.run(client._make_request_async("GET", "/workflows"))
+
+        self.assertEqual(result, {"ok": True})
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_reconnects_when_not_connected(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360WorkflowBase(self.config)
+        mock_session = mock_session_class.return_value
+        mock_session.get.return_value = Mock(status_code=200)
+        response = Mock(content=b'{"ok": true}')
+        response.json.return_value = {"ok": True}
+        mock_session.request.return_value = response
+
+        result = asyncio.run(client._make_request_async("GET", "/workflows"))
+
+        self.assertEqual(result, {"ok": True})
+        mock_session.get.assert_called_once()
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_raises_connection_error_when_reconnect_fails(
+        self, mock_encryption_class, mock_session_class
+    ):
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360WorkflowBase(self.config)
+        mock_session_class.return_value.get.return_value = Mock(status_code=503)
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            asyncio.run(client._make_request_async("GET", "/workflows"))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_401_raises_auth_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        from sasci360solworkflow.base import CI360WorkflowAuthError
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = Mock(status_code=401)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("401")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360WorkflowAuthError):
+            asyncio.run(client._make_request_async("GET", "/workflows"))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_5xx_raises_connection_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = Mock(status_code=503)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("503")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            asyncio.run(client._make_request_async("GET", "/workflows"))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_other_4xx_raises_generic_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        response = Mock(status_code=404)
+        response.raise_for_status.side_effect = requests_module.exceptions.HTTPError("404")
+        mock_session.request.return_value = response
+
+        with self.assertRaises(CI360WorkflowError):
+            asyncio.run(client._make_request_async("GET", "/workflows"))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_make_request_async_network_error_raises_connection_error(self, mock_encryption_class, mock_session_class):
+        import requests as requests_module
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
+        mock_session.request.side_effect = requests_module.exceptions.ConnectionError("refused")
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            asyncio.run(client._make_request_async("GET", "/workflows"))
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_make_request_sync_logs_and_reraises(self, mock_request_async, mock_encryption_class, mock_session_class):
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        client = CI360WorkflowBase(self.config)
+        mock_request_async.side_effect = CI360WorkflowConnectionError("down")
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            client._make_request("GET", "/workflows")
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_sync_context_manager_success(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session = mock_session_class.return_value
+        mock_session.get.return_value = Mock(status_code=200)
+
+        with CI360WorkflowBase(self.config) as client:
+            self.assertTrue(client._connected)
+        mock_session.close.assert_called_once()
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_sync_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = Mock(status_code=503)
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            with CI360WorkflowBase(self.config):
+                pass
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_async_context_manager_success(self, mock_encryption_class, mock_session_class):
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session = mock_session_class.return_value
+        mock_session.get.return_value = Mock(status_code=200)
+
+        async def _run():
+            async with CI360WorkflowBase(self.config) as client:
+                return client._connected
+
+        self.assertTrue(asyncio.run(_run()))
+        mock_session.close.assert_called_once()
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.Encryption')
+    def test_async_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
+        from sasci360solworkflow.base import CI360WorkflowConnectionError
+        mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
+        mock_session_class.return_value.get.return_value = Mock(status_code=503)
+
+        async def _run():
+            async with CI360WorkflowBase(self.config):
+                pass
+
+        with self.assertRaises(CI360WorkflowConnectionError):
+            asyncio.run(_run())
 
     # Workflow Management Tests
 
@@ -339,6 +597,170 @@ class TestCI360WorkflowBase(unittest.TestCase):
         result = client.start_process("wf-123")
 
         self.assertEqual(result["processId"], "proc-123")
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_workflows_sync_merges_filters(self, mock_request, mock_session_class):
+        mock_request.return_value = {"workflows": []}
+        client = CI360WorkflowBase(self.config)
+
+        client.get_workflows(limit=20, offset=40, filters={"status": "active"})
+
+        mock_request.assert_called_once_with(
+            "GET", "/workflows", None, {"limit": 20, "offset": 40, "status": "active"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_workflows_async_merges_filters(self, mock_request, mock_session_class):
+        mock_request.return_value = {"workflows": []}
+        client = CI360WorkflowBase(self.config)
+
+        asyncio.run(client.get_workflows_async(filters={"status": "active"}))
+
+        mock_request.assert_called_once_with(
+            "GET", "/workflows", params={"limit": 50, "offset": 0, "status": "active"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_workflow_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"id": "wf-1"}
+        client = CI360WorkflowBase(self.config)
+
+        client.get_workflow("wf-1")
+
+        mock_request.assert_called_once_with("GET", "/workflows/wf-1", None, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_update_workflow_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"id": "wf-1", "name": "Renamed"}
+        client = CI360WorkflowBase(self.config)
+
+        client.update_workflow("wf-1", {"name": "Renamed"})
+
+        mock_request.assert_called_once_with("PUT", "/workflows/wf-1", {"name": "Renamed"}, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_delete_workflow_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = None
+        client = CI360WorkflowBase(self.config)
+
+        self.assertTrue(client.delete_workflow("wf-1"))
+        mock_request.assert_called_once_with("DELETE", "/workflows/wf-1", None, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_process_status_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"status": "completed"}
+        client = CI360WorkflowBase(self.config)
+
+        result = client.get_process_status("proc-1")
+
+        self.assertEqual(result["status"], "completed")
+        mock_request.assert_called_once_with("GET", "/processes/proc-1", None, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_cancel_process_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = None
+        client = CI360WorkflowBase(self.config)
+
+        self.assertTrue(client.cancel_process("proc-1"))
+        mock_request.assert_called_once_with("POST", "/processes/proc-1/cancel", None, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_processes_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"processes": []}
+        client = CI360WorkflowBase(self.config)
+
+        client.get_processes(limit=30, offset=60, status_filter="running")
+
+        mock_request.assert_called_once_with(
+            "GET", "/processes", None, {"limit": 30, "offset": 60, "status": "running"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_triggers_sync_merges_filters(self, mock_request, mock_session_class):
+        mock_request.return_value = {"triggers": []}
+        client = CI360WorkflowBase(self.config)
+
+        client.get_triggers(limit=25, offset=50, filters={"event": "customer.created"})
+
+        mock_request.assert_called_once_with(
+            "GET", "/triggers", None, {"limit": 25, "offset": 50, "event": "customer.created"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_triggers_async_merges_filters(self, mock_request, mock_session_class):
+        mock_request.return_value = {"triggers": []}
+        client = CI360WorkflowBase(self.config)
+
+        asyncio.run(client.get_triggers_async(filters={"event": "customer.created"}))
+
+        mock_request.assert_called_once_with(
+            "GET", "/triggers", params={"limit": 50, "offset": 0, "event": "customer.created"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_create_trigger_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"id": "trig-1"}
+        client = CI360WorkflowBase(self.config)
+
+        client.create_trigger({"name": "New Trigger"})
+
+        mock_request.assert_called_once_with("POST", "/triggers", {"name": "New Trigger"}, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_update_trigger_async_and_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"id": "trig-1"}
+        client = CI360WorkflowBase(self.config)
+
+        asyncio.run(client.update_trigger_async("trig-1", {"name": "Renamed"}))
+        mock_request.assert_called_with("PUT", "/triggers/trig-1", data={"name": "Renamed"})
+
+        client.update_trigger("trig-1", {"name": "Renamed"})
+        mock_request.assert_called_with("PUT", "/triggers/trig-1", {"name": "Renamed"}, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_delete_trigger_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = None
+        client = CI360WorkflowBase(self.config)
+
+        self.assertTrue(client.delete_trigger("trig-1"))
+        mock_request.assert_called_once_with("DELETE", "/triggers/trig-1", None, None)
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_get_workflow_templates_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"templates": []}
+        client = CI360WorkflowBase(self.config)
+
+        client.get_workflow_templates(category="onboarding", limit=10)
+
+        mock_request.assert_called_once_with(
+            "GET", "/templates/workflows", None, {"limit": 10, "offset": 0, "category": "onboarding"}
+        )
+
+    @patch('sasci360solworkflow.base.requests.Session')
+    @patch('sasci360solworkflow.base.CI360WorkflowBase._make_request_async')
+    def test_create_workflow_from_template_sync(self, mock_request, mock_session_class):
+        mock_request.return_value = {"id": "wf-1"}
+        client = CI360WorkflowBase(self.config)
+
+        client.create_workflow_from_template("tmpl-1", {"name": "Custom"})
+
+        mock_request.assert_called_once_with(
+            "POST", "/workflows/from-template", {"templateId": "tmpl-1", "workflowData": {"name": "Custom"}}, None
+        )
 
 
 class TestCI360WorkflowErrorHandling(unittest.TestCase):
