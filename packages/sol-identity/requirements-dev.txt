@@ -1,14 +1,24 @@
 # Dependencies needed to lint, type-check, and test this package.
 #
-# Deliberately excludes saspy/pandas/schedule/DateTime (unused by this
-# package directly). sasci360apicore IS required now: CI360IdentityBase
-# subclasses sasci360apicore.rest_client.RestClientBase directly, so it must
-# be a real, importable package for this package's own classes to even be
-# defined - not just mockable away like the old lazy-imported Encryption
-# dependency was. See requirements.txt for the full production set.
+# sasci360apicore IS required now: CI360IdentityBase subclasses
+# sasci360apicore.rest_client.RestClientBase directly, so it must be a real,
+# importable package for this package's own classes to even be defined - not
+# just mockable away like the old lazy-imported Encryption dependency was.
+# pandas/saspy/schedule/DateTime aren't used by this package directly, but
+# sasci360apicore's own __init__.py eagerly imports every one of its
+# submodules (including the one that needs pandas), so importing any part of
+# it - even just rest_client - pulls in its full dependency set. Matches the
+# same full list every other sol-* package's requirements.txt already
+# carries for the same reason. See requirements.txt for the full production
+# set (identical to this one, minus the dev-only tools below).
+pandas>=2.0.0
+PyJWT>=2.0.0
 requests>=2.31.0
-urllib3>=2.0.0
+saspy>=5.0.0
+schedule>=1.1.0
+DateTime>=4.3
 sasci360apicore @ git+https://github.com/mnelson3/sas-ci360-sdk.git@main#subdirectory=packages/api-core
+urllib3>=2.0.0
 pytest>=7.4.0
 pytest-cov>=4.1.0
 flake8>=6.1.0
