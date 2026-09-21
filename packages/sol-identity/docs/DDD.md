@@ -8,52 +8,35 @@
 
 ## Architecture
 
-Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). Exception hierarchy: `CI360IdentityError`, `CI360IdentityAuthError`, `CI360IdentityConnectionError`, `CI360IdentityValidationError`. `_generate_token()` uses a lazy `from sasci360apicore.encryption import Encryption` import inside the method body (not the module-level try/except guard `sol-data`/`sol-execute`/`sol-workflow` use) — either failure mode is caught by the same broad `except Exception` and wrapped as `CI360IdentityAuthError`.
+Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). `CI360IdentityBase` subclasses `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21), which owns `__init__`, config validation, session creation, JWT generation, `get_auth_headers`, `validate_connection(_async)`, and `_make_request(_async)` — this package now defines only its `Config` extras (`scim_version`), its own exception hierarchy (`CI360IdentityError`, `CI360IdentityAuthError`, `CI360IdentityConnectionError`, `CI360IdentityValidationError` — unchanged names, still raised via the shared code through 4 class attributes), and its SCIM domain methods. See `docs/DDD.md`'s "Extracting the shared REST client base" section for the full rationale and the six packages' migration history.
 
-## `_base_url` property
+## Two SCIM-specific overrides
 
-Unlike the other `sol-*` packages, this one centralizes the host+api_base concatenation into one property, used by both `_make_request_async` and `validate_connection_async`:
-
-```python
-@property
-def _base_url(self) -> str:
-    assert self.config.host is not None
-    return self.config.host + self.config.api_base
-```
-
-This is why the urljoin defect (below) had to be fixed in two call sites that both derive from this one property, rather than just one.
-
-## The api_base URL bug — two mechanisms in one package
-
-**Mechanism 1** (`_make_request_async`): `urljoin(self._base_url, endpoint.lstrip('/'))` — a relative reference against a no-trailing-slash base, silently dropping `api_base` under RFC 3986. Fixed:
+This package overrides two of `RestClientBase`'s extension points rather than taking the shared defaults, both because SCIM's shape genuinely differs from the other `sol-*` APIs':
 
 ```python
-url = f"{self._base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+def get_auth_headers(self) -> Dict[str, str]:
+    # SCIM wants application/scim+json and a SCIM-Version header,
+    # not the shared class's application/json default
+    ...
+
+def _health_check_url(self) -> str:
+    # SCIM has no bare /health endpoint; ServiceProviderConfig is
+    # its well-known, unauthenticated-shape discovery endpoint,
+    # under the SCIM service root - not the host root the shared
+    # default's plain urljoin(host, "/health") hits
+    return f"{self._base_url.rstrip('/')}/ServiceProviderConfig"
 ```
 
-**Mechanism 2** (`validate_connection_async`'s SCIM health check): `urljoin(self._base_url, "/ServiceProviderConfig")` — here the *second* argument is itself absolute (starts with `/`), which makes `urljoin` replace the whole path regardless of trailing slash, dropping `api_base` a different way. `ServiceProviderConfig` is a standard SCIM endpoint under the SCIM service root, not the host root, so this needed the same fix, not just a trailing-slash tweak:
+Before the shared base existed, this package also had its own `_base_url` property (`host + api_base`, without an `rstrip` before concatenating). Moving that into `RestClientBase` (rstripping host first, matching what the other 5 packages already did inline) incidentally fixed a latent double-slash edge case here, only reachable if a caller configured `host` with a trailing slash — no test exercised it either way.
 
-```python
-sp_url = f"{self._base_url.rstrip('/')}/ServiceProviderConfig"
-```
+## The api_base URL bug — historical
 
-Both are documented in more depth in [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md) §URL construction, which also explains why plain `urljoin(host, "/health")` (used by the other `sol-*` packages' health checks, hitting the host root deliberately) is *not* the same bug — that one is an intentional absolute-path replacement, this package's `ServiceProviderConfig` check was not meant to be.
+Before the shared base existed, this package had the `urljoin`/`api_base`-dropping defect (see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md) §URL construction) in two independent call sites, since `_make_request_async` and the SCIM health check each built their own URL. Both are long since fixed, and are now one shared, tested implementation (`_make_request_async`) plus one override (`_health_check_url`) rather than two places a similar bug could recur independently.
 
 ## Testing design
 
-`tests/test_base.py` opens with the private-dependency stub this package's `requirements-dev.txt` makes necessary:
-
-```python
-if "sasci360apicore.encryption" not in sys.modules:
-    _fake_core = types.ModuleType("sasci360apicore")
-    _fake_encryption_mod = types.ModuleType("sasci360apicore.encryption")
-    _fake_encryption_mod.Encryption = MagicMock(name="Encryption")
-    _fake_core.encryption = _fake_encryption_mod
-    sys.modules.setdefault("sasci360apicore", _fake_core)
-    sys.modules.setdefault("sasci360apicore.encryption", _fake_encryption_mod)
-```
-
-`setdefault` means a real, actually-installed `api-core` (e.g. in an environment wired up to a private package index) is never shadowed — this only stubs the module when nothing real is already there. This is the pattern this repository points to as the reference example whenever a package needs to test against a dependency that can't or shouldn't be installed for CI (see `sol-content-delivery`'s DDD for the earlier, module-level-import-guard variant, and `sas-ci360-solutions`'/`sas-ci360-plan-connector`'s own docs for where this same technique was reused for pywin32 and cloud SDKs respectively).
+`tests/test_base.py` used to open with a `sys.modules` stub faking `sasci360apicore`/`sasci360apicore.encryption`, because the old `_generate_token()` imported `Encryption` lazily and this package's `requirements-dev.txt` deliberately didn't install the real `sasci360apicore` (see `sol-content-delivery`'s DDD for the module-level-import-guard variant other packages used instead, and `sas-ci360-solutions`'/`sas-ci360-plan-connector`'s docs for where the same general stubbing technique was reused for pywin32 and cloud SDKs). That stub is removed: `CI360IdentityBase` now subclasses `RestClientBase` directly, so `sasci360apicore` must be a real, importable package for this package's own classes to be defined at all, not just mockable away at call time. `requirements-dev.txt` now installs the real `sasci360apicore` (and its own transitive deps — `sasci360apicore`'s `__init__.py` eagerly imports every one of its submodules, so even needing only `rest_client` pulls in the full set). Test patches for `requests.Session`/`Encryption`/`asyncio.run` now target `sasci360apicore.rest_client`, since that's where the shared code that uses them actually lives; patches on `CI360IdentityBase._make_request_async`/`validate_connection(_async)` were untouched, since those resolve correctly via inheritance regardless of which class defines the method.
 
 ## CI/CD pipeline
 

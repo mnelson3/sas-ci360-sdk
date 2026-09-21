@@ -8,7 +8,7 @@
 
 ## Architecture
 
-Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). Exception hierarchy: `CI360WorkflowError`, `CI360WorkflowAuthError`, `CI360WorkflowConnectionError`, `CI360WorkflowValidationError`.
+Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). `CI360WorkflowBase` subclasses `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21), which owns connection/auth/request-dispatch; this package defines only its `Config` extras (`max_concurrent_workflows`, `workflow_timeout`), its exception hierarchy — `CI360WorkflowError`, `CI360WorkflowAuthError`, `CI360WorkflowConnectionError`, `CI360WorkflowValidationError` (unchanged names, raised via the shared code through 4 class attributes) — and its domain methods.
 
 ## The JWT auth bug (found during the monorepo migration)
 

@@ -8,7 +8,7 @@
 
 ## Architecture
 
-Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). Exception hierarchy: `CI360ContentDeliveryError`, `CI360ContentDeliveryAuthError`, `CI360ContentDeliveryConnectionError`, `CI360ContentDeliveryValidationError`.
+Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). `CI360ContentDeliveryBase` subclasses `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21), which owns connection/auth/request-dispatch; this package defines only its `Config` extras (`max_file_size_mb`, `supported_formats`), its exception hierarchy — `CI360ContentDeliveryError`, `CI360ContentDeliveryAuthError`, `CI360ContentDeliveryConnectionError`, `CI360ContentDeliveryValidationError` (unchanged names, raised via the shared code through 4 class attributes) — and its domain methods.
 
 ## Why this package's gap mattered most
 

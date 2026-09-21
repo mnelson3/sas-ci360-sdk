@@ -8,7 +8,7 @@
 
 ## Architecture
 
-Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). Exception hierarchy: `CI360PlanningError`, `CI360PlanningAuthError`, `CI360PlanningConnectionError`, `CI360PlanningValidationError`.
+Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). `CI360PlanningBase` subclasses `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21, and the pilot package for that migration), which owns connection/auth/request-dispatch; this package defines only its `Config` extras (`max_campaigns_per_user`, `max_audience_size`), its exception hierarchy — `CI360PlanningError`, `CI360PlanningAuthError`, `CI360PlanningConnectionError`, `CI360PlanningValidationError` (unchanged names, raised via the shared code through 4 class attributes) — and its domain methods.
 
 ## History: this package's fixes predate the rest of the family's testing pass
 

@@ -8,9 +8,9 @@
 
 ## Architecture
 
-`sol-data` follows the standard Layer-2 domain-client pattern described in [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md): `CI360DataConfig` dataclass, `CI360DataBase` class, sync/async pairs for every operation, a typed exception hierarchy (`CI360DataError`, `CI360DataAuthError`, `CI360DataConnectionError`, `CI360DataValidationError`).
+`sol-data` follows the standard Layer-2 domain-client pattern described in [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md): `CI360DataConfig(RestClientConfig)` dataclass, `CI360DataBase(RestClientBase)` class, sync/async pairs for every operation, a typed exception hierarchy (`CI360DataError`, `CI360DataAuthError`, `CI360DataConnectionError`, `CI360DataValidationError`) raised via `RestClientBase`'s shared code through 4 class attributes. `sol-data` has no extra `_validate_extra_config` or `_health_check_url` overrides — it takes the shared base's defaults as-is, unlike `sol-identity`.
 
-`_generate_token()` uses the module-level `try: from sasci360apicore.encryption import Encryption / except ImportError: Encryption = None` guard pattern — if `api-core` isn't installed, `_generate_token()` raises `CI360DataAuthError` with a clear message rather than an opaque `ImportError` at construction time.
+`_generate_token()` — along with the rest of the connection/auth/request-dispatch boilerplate this used to define locally — now lives in `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21, see the parent DDD.md's "Domain client pattern"). It's a plain top-level `from sasci360apicore.encryption import Encryption` there, no `try/except ImportError` guard: that guard existed because each package treated `api-core` as an optional dependency it might not have installed, which is moot now that the import lives inside `api-core` itself.
 
 ## The api_base URL bug
 
