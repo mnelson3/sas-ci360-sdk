@@ -19,8 +19,8 @@ data processing capabilities.
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -107,7 +107,7 @@ class CI360DataBase:
     def _validate_config(self) -> None:
         """Validate configuration parameters."""
         required_fields = ['host', 'secret_key', 'tenant_id']
-        missing = [field for field in required_fields if not getattr(self.config, field)]
+        missing = [f for f in required_fields if not getattr(self.config, f)]
 
         if missing:
             raise CI360DataValidationError(f"Missing required configuration: {', '.join(missing)}")
