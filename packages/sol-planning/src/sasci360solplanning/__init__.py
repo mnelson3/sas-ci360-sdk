@@ -6,7 +6,7 @@
 # Licensed under the Nelson Grey LLC Community License 1.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# https://github.com/mnelson3/sas-ci360-sol-planning/blob/main/LICENSE
+# https://github.com/mnelson3/sas-ci360-sdk/blob/main/LICENSE
 #
 # -*- coding: utf-8 -*-
 """SAS CI360 Planning Solution package."""
