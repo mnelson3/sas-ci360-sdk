@@ -8,7 +8,7 @@
 
 ## Architecture
 
-Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). Exception hierarchy: `CI360ExecuteError`, `CI360ExecuteAuthError`, `CI360ExecuteConnectionError`, `CI360ExecuteValidationError`.
+Standard Layer-2 domain-client pattern — see [sas-ci360-sdk/docs/DDD.md](../../../docs/DDD.md). `CI360ExecuteBase` subclasses `sasci360apicore.rest_client.RestClientBase` (added 2026-09-21), which owns connection/auth/request-dispatch; this package defines only its `Config` extras (`batch_size`, `max_concurrent_jobs`, `job_timeout`), its exception hierarchy — `CI360ExecuteError`, `CI360ExecuteAuthError`, `CI360ExecuteConnectionError`, `CI360ExecuteValidationError` (unchanged names, raised via the shared code through 4 class attributes) — and its domain methods.
 
 ## The api_base URL bug
 
