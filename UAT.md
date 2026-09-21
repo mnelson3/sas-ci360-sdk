@@ -11,6 +11,22 @@ These tests are opt-in. They never run in CI (no repository secrets are
 configured for them, deliberately), and locally they're skipped rather
 than failed unless you explicitly provide credentials.
 
+## Status (as of 2026-09-21)
+
+This harness has been built and unit-tested (the `pytest.mark.skipif`
+gating itself is verified), but **not yet executed against a real
+tenant** - no CI360 Access Point credentials (training or production)
+were available in this environment as of this writing. Until someone
+with access to a licensed CI360 tenant runs this tier at least once,
+"the SDK works against a real API" is a design intent backed by
+extensive mocked-at-the-session-boundary unit tests, not a confirmed
+fact. Treat that as the highest-priority open verification step before
+depending on this SDK for anything live - see each package's own
+mocked unit tests for what *has* been verified (request construction,
+URL building, error mapping), and this section for what hasn't
+(whether CI360 actually accepts and responds to those requests as
+expected).
+
 ## What's covered
 
 One `test_live_tenant.py` (or `TestLiveTenant.py` for the two packages
