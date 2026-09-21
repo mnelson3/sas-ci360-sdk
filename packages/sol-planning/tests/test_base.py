@@ -60,8 +60,8 @@ class TestCI360PlanningBase(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_initialization_success(self, mock_encryption_class, mock_session_class):
         """Test successful initialization."""
         mock_encryption = Mock()
@@ -78,8 +78,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
     # Campaign Management Tests
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_campaigns_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign retrieval."""
@@ -94,8 +94,8 @@ class TestCI360PlanningBase(unittest.TestCase):
             params={"limit": 25, "offset": 50}
         )
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async single campaign retrieval."""
@@ -113,8 +113,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         self.assertEqual(result["name"], "Holiday Campaign 2025")
         mock_request.assert_called_once_with("GET", "/campaigns/camp-123")
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_create_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign creation."""
@@ -132,8 +132,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         self.assertEqual(result["id"], "camp-456")
         mock_request.assert_called_once_with("POST", "/campaigns", data=campaign_data)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_update_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign update."""
@@ -146,8 +146,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         self.assertEqual(result["name"], "Updated Campaign Name")
         mock_request.assert_called_once_with("PUT", "/campaigns/camp-123", data=update_data)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_delete_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign deletion."""
@@ -161,8 +161,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
     # Audience Management Tests
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_audiences_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async audience retrieval."""
@@ -177,8 +177,8 @@ class TestCI360PlanningBase(unittest.TestCase):
             params={"limit": 30, "offset": 60}
         )
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_create_audience_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async audience creation."""
@@ -195,8 +195,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         self.assertEqual(result["name"], "High-Value Customers")
         mock_request.assert_called_once_with("POST", "/audiences", data=audience_data)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_estimate_audience_size_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async audience size estimation."""
@@ -211,8 +211,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
     # Campaign Optimization Tests
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_optimize_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign optimization."""
@@ -231,8 +231,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         expected_payload = {"campaignId": "camp-123", "optimizationParams": optimization_params}
         mock_request.assert_called_once_with("POST", "/campaigns/optimize", data=expected_payload)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_campaign_analytics_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign analytics retrieval."""
@@ -261,8 +261,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
     # Template Management Tests
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_campaign_templates_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign template retrieval."""
@@ -275,8 +275,8 @@ class TestCI360PlanningBase(unittest.TestCase):
         expected_params = {"category": "promotional", "limit": 15, "offset": 0}
         mock_request.assert_called_once_with("GET", "/templates/campaigns", params=expected_params)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_create_campaign_from_template_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign creation from template."""
@@ -297,8 +297,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
     # Synchronous method tests
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_get_campaigns_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous campaign retrieval."""
@@ -309,8 +309,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
         self.assertEqual(result["total"], 0)
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_create_campaign_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous campaign creation."""
@@ -322,8 +322,8 @@ class TestCI360PlanningBase(unittest.TestCase):
 
         self.assertEqual(result["id"], "camp-123")
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_estimate_audience_size_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous audience size estimation."""
@@ -347,8 +347,8 @@ class TestCI360PlanningErrorHandling(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solplanning.base.CI360PlanningBase._make_request_async')
     def test_validation_error_handling(self, mock_request, mock_encryption_class, mock_session_class):
         """Test validation error handling."""
@@ -370,8 +370,8 @@ class TestCI360PlanningErrorHandling(unittest.TestCase):
     # reference resolution. These tests mock one level deeper (the
     # session's own .request call) to pin down the actual URL requested.
 
-    @patch('sasci360solplanning.base.requests.Session')
-    @patch('sasci360solplanning.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_includes_api_base_in_url(self, mock_encryption_class, mock_session_class):
         """_make_request_async must build a URL under config.api_base, not just config.host."""
         mock_encryption = Mock()

@@ -12,6 +12,7 @@ from sasci360apicore import encryption
 from sasci360apicore import listener
 from sasci360apicore import logger
 from sasci360apicore import reporter
+from sasci360apicore import rest_client
 from sasci360apicore import scheduler
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "listener",
     "logger",
     "reporter",
+    "rest_client",
     "scheduler",
 ]
