@@ -6,41 +6,27 @@
 # Licensed under the Nelson Grey LLC Community License 1.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# https://github.com/mnelson3/sas-ci360-sol-identity/blob/main/LICENSE
+# https://github.com/mnelson3/sas-ci360-sdk/blob/main/LICENSE
 #
 # -*- coding: utf-8 -*-
 """
 SAS CI360 Identity Module Base Class
 
-Provides foundational functionality for SAS Customer Intelligence 360
-identity management operations using SCIM, including connection management,
-authentication, and user/group management capabilities.
+Provides the SCIM API's client, built on sasci360apicore.rest_client's
+shared connection/auth/request handling.
 """
 
-import asyncio
-import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from sasci360apicore.rest_client import RestClientBase, RestClientConfig
 
 
 @dataclass
-class CI360IdentityConfig:
+class CI360IdentityConfig(RestClientConfig):
     """Configuration for CI360 Identity operations."""
 
-    algorithm: str = "HS256"
     api_base: str = "/scim"
-    encoding: str = "utf-8"
-    host: Optional[str] = None
-    secret_key: Optional[str] = None
-    tenant_id: Optional[str] = None
-    timeout: int = 30
-    max_retries: int = 3
-    retry_backoff: float = 0.5
-    enable_compression: bool = True
     scim_version: str = "2.0"
 
 
@@ -64,99 +50,24 @@ class CI360IdentityValidationError(CI360IdentityError):
     pass
 
 
-class CI360IdentityBase:
+class CI360IdentityBase(RestClientBase):
     """
-    Base class for SAS CI360 Identity operations.
+    Client for SAS CI360 Identity operations.
 
     Provides authentication, connection management, and common functionality
     for identity and user management API interactions using SCIM with async support.
     """
 
-    def __init__(self, config: Optional[CI360IdentityConfig] = None) -> None:
-        """
-        Initialize the CI360 Identity base client.
+    _CONFIG_CLS = CI360IdentityConfig
+    _ERROR_CLS = CI360IdentityError
+    _AUTH_ERROR_CLS = CI360IdentityAuthError
+    _CONNECTION_ERROR_CLS = CI360IdentityConnectionError
+    _VALIDATION_ERROR_CLS = CI360IdentityValidationError
 
-        Args:
-            config: Configuration object for CI360 Identity operations
-
-        Raises:
-            CI360IdentityValidationError: If required configuration is missing
-        """
-        self.config = config or CI360IdentityConfig()
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-        # Validate configuration
-        self._validate_config()
-
-        # Initialize HTTP session with retry strategy
-        self.session = self._create_session()
-
-        # Generate authentication token
-        self.token = self._generate_token()
-
-        # Connection state
-        self._connected = False
-
-        self.logger.info("CI360 Identity Base initialized successfully")
-
-    def _validate_config(self) -> None:
-        """Validate configuration parameters."""
-        required_fields = ['host', 'secret_key', 'tenant_id']
-        missing = [name for name in required_fields if not getattr(self.config, name)]
-
-        if missing:
-            raise CI360IdentityValidationError(f"Missing required configuration: {', '.join(missing)}")
-
-        # Validate algorithm
-        supported_algorithms = ['HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512']
-        if self.config.algorithm not in supported_algorithms:
-            raise CI360IdentityValidationError(f"Unsupported algorithm: {self.config.algorithm}")
-
-        # Validate SCIM version
+    def _validate_extra_config(self) -> None:
         supported_versions = ['2.0', '1.1']
         if self.config.scim_version not in supported_versions:
             raise CI360IdentityValidationError(f"Unsupported SCIM version: {self.config.scim_version}")
-
-    def _create_session(self) -> requests.Session:
-        """Create HTTP session with retry strategy."""
-        session = requests.Session()
-
-        # Configure retry strategy
-        retry_strategy = Retry(
-            total=self.config.max_retries,
-            backoff_factor=self.config.retry_backoff,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-
-        return session
-
-    @property
-    def _base_url(self) -> str:
-        """Base URL for CI360 API requests (host is validated as non-None in __init__)."""
-        assert self.config.host is not None
-        return self.config.host + self.config.api_base
-
-    def _generate_token(self) -> str:
-        """Generate JWT authentication token."""
-        try:
-            # Import here to avoid circular imports
-            from sasci360apicore.encryption import Encryption
-
-            encryption = Encryption(
-                algorithm=self.config.algorithm,
-                encoding=self.config.encoding
-            )
-
-            return encryption.generate_jwt(
-                tenant_id=self.config.tenant_id,
-                secret_key=self.config.secret_key
-            )
-        except Exception as e:
-            raise CI360IdentityAuthError(f"Failed to generate authentication token: {e}")
 
     def get_auth_headers(self) -> Dict[str, str]:
         """
@@ -173,132 +84,10 @@ class CI360IdentityBase:
             "SCIM-Version": self.config.scim_version
         }
 
-    async def validate_connection_async(self) -> bool:
-        """
-        Asynchronously validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # SCIM service provider config endpoint, under the SCIM base path
-            sp_url = f"{self._base_url.rstrip('/')}/ServiceProviderConfig"
-            headers = self.get_auth_headers()
-
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.get(
-                    sp_url,
-                    headers=headers,
-                    timeout=self.config.timeout
-                )
-            )
-
-            self._connected = response.status_code == 200
-            return self._connected
-
-        except Exception as e:
-            self.logger.error(f"Connection validation failed: {e}")
-            self._connected = False
-            return False
-
-    def validate_connection(self) -> bool:
-        """
-        Validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # Run async validation in sync context
-            return asyncio.run(self.validate_connection_async())
-        except Exception as e:
-            self.logger.error(f"Sync connection validation failed: {e}")
-            return False
-
-    async def _make_request_async(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make asynchronous HTTP request to CI360 SCIM API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-
-        Raises:
-            CI360IdentityConnectionError: For network/connection errors
-            CI360IdentityAuthError: For authentication errors
-        """
-        if not self._connected:
-            await self.validate_connection_async()
-            if not self._connected:
-                raise CI360IdentityConnectionError("No active connection to CI360 service")
-
-        url = f"{self._base_url.rstrip('/')}/{endpoint.lstrip('/')}"
-        headers = self.get_auth_headers()
-
-        try:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                    params=params,
-                    timeout=self.config.timeout
-                )
-            )
-
-            response.raise_for_status()
-            return response.json() if response.content else {}
-
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 401:
-                raise CI360IdentityAuthError(f"Authentication failed: {e}")
-            elif response.status_code >= 500:
-                raise CI360IdentityConnectionError(f"Server error: {e}")
-            else:
-                raise CI360IdentityError(f"SCIM API request failed: {e}")
-        except requests.exceptions.RequestException as e:
-            raise CI360IdentityConnectionError(f"Network error: {e}")
-
-    def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make synchronous HTTP request to CI360 SCIM API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-        """
-        try:
-            return asyncio.run(self._make_request_async(method, endpoint, data, params))
-        except Exception as e:
-            self.logger.error(f"Request failed: {e}")
-            raise
+    def _health_check_url(self) -> str:
+        """SCIM has no bare /health endpoint; ServiceProviderConfig is its
+        equivalent well-known, unauthenticated-shape discovery endpoint."""
+        return f"{self._base_url.rstrip('/')}/ServiceProviderConfig"
 
     # User Management APIs
 
@@ -633,23 +422,3 @@ class CI360IdentityBase:
             "Operations": operations
         }
         return self._make_request("POST", "/Bulk", data=payload)
-
-    def __enter__(self):
-        """Context manager entry."""
-        if not self.validate_connection():
-            raise CI360IdentityConnectionError("Failed to establish connection")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.session.close()
-
-    async def __aenter__(self):
-        """Async context manager entry."""
-        if not await self.validate_connection_async():
-            raise CI360IdentityConnectionError("Failed to establish connection")
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        self.session.close()
