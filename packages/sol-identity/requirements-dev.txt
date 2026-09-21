@@ -11,7 +11,7 @@
 # same full list every other sol-* package's requirements.txt already
 # carries for the same reason. See requirements.txt for the full production
 # set (identical to this one, minus the dev-only tools below).
-pandas>=2.0.0
+pandas>=3.0.6
 PyJWT>=2.0.0
 requests>=2.31.0
 saspy>=5.0.0
