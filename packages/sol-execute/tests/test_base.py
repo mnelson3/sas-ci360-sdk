@@ -59,8 +59,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_initialization_success(self, mock_encryption_class, mock_session_class):
         """Test successful initialization."""
         mock_encryption = Mock()
@@ -93,15 +93,15 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteError):
             CI360ExecuteBase(config)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption', None)
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption', None)
     def test_generate_token_raises_auth_error_when_encryption_unavailable(self, mock_session_class):
         from sasci360solexecute.base import CI360ExecuteAuthError
         with self.assertRaises(CI360ExecuteAuthError):
             CI360ExecuteBase(self.config)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_generate_token_wraps_any_failure_as_auth_error(self, mock_encryption_class, mock_session_class):
         from sasci360solexecute.base import CI360ExecuteAuthError
         mock_encryption_class.return_value.generate_jwt.side_effect = RuntimeError("bad key")
@@ -109,8 +109,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteAuthError):
             CI360ExecuteBase(self.config)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_auth_headers(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-jwt-token"
 
@@ -120,8 +120,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(headers["Authorization"], "Bearer test-jwt-token")
         self.assertEqual(headers["X-Tenant-ID"], "test-tenant-id")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_true_on_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=200)
@@ -132,8 +132,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(result)
         self.assertTrue(client._connected)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_on_non_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=503)
@@ -144,8 +144,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(client._connected)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_when_session_raises(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.side_effect = ConnectionError("refused")
@@ -154,8 +154,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertFalse(asyncio.run(client.validate_connection_async()))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=200)
@@ -164,9 +164,9 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertTrue(client.validate_connection())
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
-    @patch('sasci360solexecute.base.asyncio.run')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
+    @patch('sasci360apicore.rest_client.asyncio.run')
     def test_validate_connection_sync_false_when_asyncio_run_raises(
         self, mock_asyncio_run, mock_encryption_class, mock_session_class
     ):
@@ -182,8 +182,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         client._connected = True
         return client, mock_session_class.return_value
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_returns_parsed_json_on_success(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(content=b'{"ok": true}')
@@ -194,8 +194,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertEqual(result, {"ok": True})
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_reconnects_when_not_connected(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         client = CI360ExecuteBase(self.config)
@@ -210,8 +210,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result, {"ok": True})
         mock_session.get.assert_called_once()
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_raises_connection_error_when_reconnect_fails(
         self, mock_encryption_class, mock_session_class
     ):
@@ -223,8 +223,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             asyncio.run(client._make_request_async("GET", "/campaigns"))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_401_raises_auth_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360solexecute.base import CI360ExecuteAuthError
@@ -236,8 +236,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteAuthError):
             asyncio.run(client._make_request_async("GET", "/campaigns"))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_5xx_raises_connection_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360solexecute.base import CI360ExecuteConnectionError
@@ -249,8 +249,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             asyncio.run(client._make_request_async("GET", "/campaigns"))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_other_4xx_raises_generic_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
@@ -261,8 +261,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteError):
             asyncio.run(client._make_request_async("GET", "/campaigns"))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_network_error_raises_connection_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360solexecute.base import CI360ExecuteConnectionError
@@ -272,8 +272,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             asyncio.run(client._make_request_async("GET", "/campaigns"))
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_make_request_sync_logs_and_reraises(self, mock_request_async, mock_encryption_class, mock_session_class):
         from sasci360solexecute.base import CI360ExecuteConnectionError
@@ -284,8 +284,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             client._make_request("GET", "/campaigns")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_success(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -295,8 +295,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
             self.assertTrue(client._connected)
         mock_session.close.assert_called_once()
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
         from sasci360solexecute.base import CI360ExecuteConnectionError
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
@@ -306,8 +306,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
             with CI360ExecuteBase(self.config):
                 pass
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_async_context_manager_success(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -320,8 +320,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(asyncio.run(_run()))
         mock_session.close.assert_called_once()
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_async_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
         from sasci360solexecute.base import CI360ExecuteConnectionError
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
@@ -334,8 +334,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         with self.assertRaises(CI360ExecuteConnectionError):
             asyncio.run(_run())
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_execute_campaign_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async campaign execution."""
@@ -348,8 +348,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         expected_payload = {"campaignId": "camp-123", "executionParams": {"priority": "high"}}
         mock_request.assert_called_once_with("POST", "/campaigns/execute", data=expected_payload)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_execution_status_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async execution status retrieval."""
@@ -361,8 +361,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         mock_request.assert_called_once_with("GET", "/executions/exec-123")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_cancel_execution_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async execution cancellation."""
@@ -374,8 +374,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(result)
         mock_request.assert_called_once_with("POST", "/executions/exec-123/cancel")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_submit_batch_job_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async batch job submission."""
@@ -391,8 +391,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["jobId"], "job-123")
         mock_request.assert_called_once_with("POST", "/batch/jobs", data=job_data)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_batch_job_status_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async batch job status retrieval."""
@@ -404,8 +404,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["status"], "running")
         mock_request.assert_called_once_with("GET", "/batch/jobs/job-123")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_cancel_batch_job_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async batch job cancellation."""
@@ -417,8 +417,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(result)
         mock_request.assert_called_once_with("POST", "/batch/jobs/job-123/cancel")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_batch_jobs_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async batch jobs listing."""
@@ -431,8 +431,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         expected_params = {"limit": 25, "offset": 50, "status": "completed"}
         mock_request.assert_called_once_with("GET", "/batch/jobs", params=expected_params)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_schedule_job_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async job scheduling."""
@@ -450,8 +450,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["scheduleId"], "sched-123")
         mock_request.assert_called_once_with("POST", "/schedules", data=schedule_data)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_scheduled_jobs_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async scheduled jobs listing."""
@@ -464,8 +464,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         expected_params = {"limit": 10, "offset": 20, "activeOnly": False}
         mock_request.assert_called_once_with("GET", "/schedules", params=expected_params)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_update_schedule_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async schedule update."""
@@ -478,8 +478,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["schedule"], "0 4 * * *")
         mock_request.assert_called_once_with("PUT", "/schedules/sched-123", data=update_data)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_delete_schedule_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async schedule deletion."""
@@ -491,8 +491,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(result)
         mock_request.assert_called_once_with("DELETE", "/schedules/sched-123")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_execution_metrics_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async execution metrics retrieval."""
@@ -520,8 +520,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
     # Synchronous method tests
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_execute_campaign_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous campaign execution."""
@@ -532,8 +532,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertEqual(result["executionId"], "exec-123")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_execution_status_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous execution status retrieval."""
@@ -544,8 +544,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertEqual(result["status"], "completed")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_submit_batch_job_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous batch job submission."""
@@ -557,8 +557,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         self.assertEqual(result["jobId"], "job-123")
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_cancel_execution_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -567,8 +567,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(client.cancel_execution("exec-123"))
         mock_request.assert_called_once_with("POST", "/executions/exec-123/cancel", None, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_batch_job_status_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"jobId": "job-123", "status": "running"}
@@ -579,8 +579,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertEqual(result["status"], "running")
         mock_request.assert_called_once_with("GET", "/batch/jobs/job-123", None, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_cancel_batch_job_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -589,8 +589,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(client.cancel_batch_job("job-123"))
         mock_request.assert_called_once_with("POST", "/batch/jobs/job-123/cancel", None, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_batch_jobs_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"jobs": []}
@@ -602,8 +602,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
             "GET", "/batch/jobs", None, {"limit": 25, "offset": 50, "status": "completed"}
         )
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_schedule_job_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"scheduleId": "sched-123"}
@@ -613,8 +613,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         mock_request.assert_called_once_with("POST", "/schedules", {"name": "Daily Sync"}, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_scheduled_jobs_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"schedules": []}
@@ -626,8 +626,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
             "GET", "/schedules", None, {"limit": 10, "offset": 20, "activeOnly": False}
         )
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_update_schedule_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"scheduleId": "sched-123"}
@@ -637,8 +637,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
 
         mock_request.assert_called_once_with("PUT", "/schedules/sched-123", {"schedule": "0 4 * * *"}, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_delete_schedule_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -647,8 +647,8 @@ class TestCI360ExecuteBase(unittest.TestCase):
         self.assertTrue(client.delete_schedule("sched-123"))
         mock_request.assert_called_once_with("DELETE", "/schedules/sched-123", None, None)
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_get_execution_metrics_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"totalExecutions": 150}
@@ -673,8 +673,8 @@ class TestCI360ExecuteErrorHandling(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solexecute.base.CI360ExecuteBase._make_request_async')
     def test_execution_error_handling(self, mock_request, mock_encryption_class, mock_session_class):
         """Test execution error handling."""
@@ -698,8 +698,8 @@ class TestCI360ExecuteErrorHandling(unittest.TestCase):
     # deeper (the session's own .request call) to pin down the actual
     # URL requested.
 
-    @patch('sasci360solexecute.base.requests.Session')
-    @patch('sasci360solexecute.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_includes_api_base_in_url(self, mock_encryption_class, mock_session_class):
         """_make_request_async must build a URL under config.api_base, not just config.host."""
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"

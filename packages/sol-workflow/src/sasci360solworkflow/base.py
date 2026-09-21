@@ -6,47 +6,27 @@
 # Licensed under the Nelson Grey LLC Community License 1.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# https://github.com/mnelson3/sas-ci360-sol-workflow/blob/main/LICENSE
+# https://github.com/mnelson3/sas-ci360-sdk/blob/main/LICENSE
 #
 # -*- coding: utf-8 -*-
 """
 SAS CI360 Workflow Module Base Class
 
-Provides foundational functionality for SAS Customer Intelligence 360
-workflow operations, including connection management, authentication,
-and workflow automation capabilities.
+Provides the Workflow API's client, built on sasci360apicore.rest_client's
+shared connection/auth/request handling.
 """
 
-import asyncio
-import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
-try:
-    from sasci360apicore.encryption import Encryption
-except ImportError:  # pragma: no cover - optional dependency, only needed at runtime
-    Encryption = None
+from sasci360apicore.rest_client import RestClientBase, RestClientConfig
 
 
 @dataclass
-class CI360WorkflowConfig:
+class CI360WorkflowConfig(RestClientConfig):
     """Configuration for CI360 Workflow operations."""
 
-    algorithm: str = "HS256"
     api_base: str = "/marketingWorkflow"
-    encoding: str = "utf-8"
-    host: Optional[str] = None
-    secret_key: Optional[str] = None
-    tenant_id: Optional[str] = None
-    timeout: int = 30
-    max_retries: int = 3
-    retry_backoff: float = 0.5
-    enable_compression: bool = True
     max_concurrent_workflows: int = 50
     workflow_timeout: int = 7200
 
@@ -71,237 +51,23 @@ class CI360WorkflowValidationError(CI360WorkflowError):
     pass
 
 
-class CI360WorkflowBase:
+class CI360WorkflowBase(RestClientBase):
     """
-    Base class for SAS CI360 Workflow operations.
+    Client for SAS CI360 Workflow operations.
 
     Provides authentication, connection management, and common functionality
     for workflow automation and process management API interactions with async support.
     """
 
-    def __init__(self, config: Optional[CI360WorkflowConfig] = None) -> None:
-        """
-        Initialize the CI360 Workflow base client.
+    _CONFIG_CLS = CI360WorkflowConfig
+    _ERROR_CLS = CI360WorkflowError
+    _AUTH_ERROR_CLS = CI360WorkflowAuthError
+    _CONNECTION_ERROR_CLS = CI360WorkflowConnectionError
+    _VALIDATION_ERROR_CLS = CI360WorkflowValidationError
 
-        Args:
-            config: Configuration object for CI360 Workflow operations
-
-        Raises:
-            CI360WorkflowValidationError: If required configuration is missing
-        """
-        self.config = config or CI360WorkflowConfig()
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-        # Validate configuration
-        self._validate_config()
-
-        # Initialize HTTP session with retry strategy
-        self.session = self._create_session()
-
-        # Generate authentication token
-        self.token = self._generate_token()
-
-        # Connection state
-        self._connected = False
-
-        self.logger.info("CI360 Workflow Base initialized successfully")
-
-    def _validate_config(self) -> None:
-        """Validate configuration parameters."""
-        required_fields = ['host', 'secret_key', 'tenant_id']
-        missing = [f for f in required_fields if not getattr(self.config, f)]
-
-        if missing:
-            raise CI360WorkflowValidationError(f"Missing required configuration: {', '.join(missing)}")
-
-        # Validate algorithm
-        supported_algorithms = ['HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512']
-        if self.config.algorithm not in supported_algorithms:
-            raise CI360WorkflowValidationError(f"Unsupported algorithm: {self.config.algorithm}")
-
-        # Validate workflow concurrency
+    def _validate_extra_config(self) -> None:
         if self.config.max_concurrent_workflows <= 0:
             raise CI360WorkflowValidationError("max_concurrent_workflows must be positive")
-
-    def _create_session(self) -> requests.Session:
-        """Create HTTP session with retry strategy."""
-        session = requests.Session()
-
-        # Configure retry strategy
-        retry_strategy = Retry(
-            total=self.config.max_retries,
-            backoff_factor=self.config.retry_backoff,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-
-        return session
-
-    def _generate_token(self) -> str:
-        """Generate JWT authentication token."""
-        if Encryption is None:
-            raise CI360WorkflowAuthError(
-                "sasci360apicore is required to generate authentication tokens"
-            )
-
-        try:
-            encryption = Encryption(
-                algorithm=self.config.algorithm,
-                encoding=self.config.encoding
-            )
-
-            return encryption.generate_jwt(
-                tenant_id=self.config.tenant_id,
-                secret_key=self.config.secret_key
-            )
-        except Exception as e:
-            raise CI360WorkflowAuthError(f"Failed to generate authentication token: {e}")
-
-    def get_auth_headers(self) -> Dict[str, str]:
-        """
-        Get authentication headers for API requests.
-
-        Returns:
-            Dict[str, str]: Headers dictionary with authorization token
-        """
-        return {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-Tenant-ID": str(self.config.tenant_id)
-        }
-
-    async def validate_connection_async(self) -> bool:
-        """
-        Asynchronously validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # Basic health check endpoint; config.host is validated non-None in __init__
-            assert self.config.host is not None
-            health_url = urljoin(self.config.host, "/health")
-            headers = self.get_auth_headers()
-
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.get(
-                    health_url,
-                    headers=headers,
-                    timeout=self.config.timeout
-                )
-            )
-
-            self._connected = response.status_code == 200
-            return self._connected
-
-        except Exception as e:
-            self.logger.error(f"Connection validation failed: {e}")
-            self._connected = False
-            return False
-
-    def validate_connection(self) -> bool:
-        """
-        Validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # Run async validation in sync context
-            return asyncio.run(self.validate_connection_async())
-        except Exception as e:
-            self.logger.error(f"Sync connection validation failed: {e}")
-            return False
-
-    async def _make_request_async(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make asynchronous HTTP request to CI360 API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-
-        Raises:
-            CI360WorkflowConnectionError: For network/connection errors
-            CI360WorkflowAuthError: For authentication errors
-        """
-        if not self._connected:
-            await self.validate_connection_async()
-            if not self._connected:
-                raise CI360WorkflowConnectionError("No active connection to CI360 service")
-
-        assert self.config.host is not None  # validated non-None in __init__
-        url = f"{self.config.host.rstrip('/')}{self.config.api_base}/{endpoint.lstrip('/')}"
-        headers = self.get_auth_headers()
-
-        try:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                    params=params,
-                    timeout=self.config.timeout
-                )
-            )
-
-            response.raise_for_status()
-            return response.json() if response.content else {}
-
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 401:
-                raise CI360WorkflowAuthError(f"Authentication failed: {e}")
-            elif response.status_code >= 500:
-                raise CI360WorkflowConnectionError(f"Server error: {e}")
-            else:
-                raise CI360WorkflowError(f"API request failed: {e}")
-        except requests.exceptions.RequestException as e:
-            raise CI360WorkflowConnectionError(f"Network error: {e}")
-
-    def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make synchronous HTTP request to CI360 API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-        """
-        try:
-            return asyncio.run(self._make_request_async(method, endpoint, data, params))
-        except Exception as e:
-            self.logger.error(f"Request failed: {e}")
-            raise
 
     # Workflow Management APIs
 
@@ -680,23 +446,3 @@ class CI360WorkflowBase:
             "workflowData": workflow_data
         }
         return self._make_request("POST", "/workflows/from-template", data=payload)
-
-    def __enter__(self):
-        """Context manager entry."""
-        if not self.validate_connection():
-            raise CI360WorkflowConnectionError("Failed to establish connection")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.session.close()
-
-    async def __aenter__(self):
-        """Async context manager entry."""
-        if not await self.validate_connection_async():
-            raise CI360WorkflowConnectionError("Failed to establish connection")
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        self.session.close()
