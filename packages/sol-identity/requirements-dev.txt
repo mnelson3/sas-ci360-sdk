@@ -1,11 +1,14 @@
 # Dependencies needed to lint, type-check, and test this package.
 #
-# Deliberately excludes sasci360apicore/sasci360apiscim (private packages
-# requiring an internal index) and saspy/pandas/schedule/DateTime (unused by
-# this package directly). Unit tests mock the private encryption dependency
-# instead of installing it. See requirements.txt for the full production set.
+# Deliberately excludes saspy/pandas/schedule/DateTime (unused by this
+# package directly). sasci360apicore IS required now: CI360IdentityBase
+# subclasses sasci360apicore.rest_client.RestClientBase directly, so it must
+# be a real, importable package for this package's own classes to even be
+# defined - not just mockable away like the old lazy-imported Encryption
+# dependency was. See requirements.txt for the full production set.
 requests>=2.31.0
 urllib3>=2.0.0
+sasci360apicore @ git+https://github.com/mnelson3/sas-ci360-sdk.git@main#subdirectory=packages/api-core
 pytest>=7.4.0
 pytest-cov>=4.1.0
 flake8>=6.1.0

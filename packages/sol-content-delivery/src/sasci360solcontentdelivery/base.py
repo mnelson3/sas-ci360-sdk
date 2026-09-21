@@ -6,42 +6,29 @@
 # Licensed under the Nelson Grey LLC Community License 1.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# https://github.com/mnelson3/sas-ci360-sol-content-delivery/blob/main/LICENSE
+# https://github.com/mnelson3/sas-ci360-sdk/blob/main/LICENSE
 #
 # -*- coding: utf-8 -*-
 """
 SAS CI360 Content Delivery Module Base Class
 
-Provides foundational functionality for SAS Customer Intelligence 360
-content delivery operations, including connection management, authentication,
-and digital asset management capabilities.
+Provides the Digital Assets API's client, built on sasci360apicore.rest_client's
+shared connection/auth/request handling.
 """
 
 import asyncio
-import logging
+import io
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from sasci360apicore.rest_client import RestClientBase, RestClientConfig
 
 
 @dataclass
-class CI360ContentDeliveryConfig:
+class CI360ContentDeliveryConfig(RestClientConfig):
     """Configuration for CI360 Content Delivery operations."""
 
-    algorithm: str = "HS256"
     api_base: str = "/digital-assets"
-    encoding: str = "utf-8"
-    host: Optional[str] = None
-    secret_key: Optional[str] = None
-    tenant_id: Optional[str] = None
-    timeout: int = 30
-    max_retries: int = 3
-    retry_backoff: float = 0.5
-    enable_compression: bool = True
     max_file_size_mb: int = 100
     supported_formats: List[str] = field(default_factory=lambda: [
         'jpg', 'jpeg', 'png', 'gif', 'pdf', 'html', 'txt', 'mp4', 'avi'
@@ -68,235 +55,23 @@ class CI360ContentDeliveryValidationError(CI360ContentDeliveryError):
     pass
 
 
-class CI360ContentDeliveryBase:
+class CI360ContentDeliveryBase(RestClientBase):
     """
-    Base class for SAS CI360 Content Delivery operations.
+    Client for SAS CI360 Content Delivery operations.
 
     Provides authentication, connection management, and common functionality
     for digital asset and content management API interactions with async support.
     """
 
-    def __init__(self, config: Optional[CI360ContentDeliveryConfig] = None) -> None:
-        """
-        Initialize the CI360 Content Delivery base client.
+    _CONFIG_CLS = CI360ContentDeliveryConfig
+    _ERROR_CLS = CI360ContentDeliveryError
+    _AUTH_ERROR_CLS = CI360ContentDeliveryAuthError
+    _CONNECTION_ERROR_CLS = CI360ContentDeliveryConnectionError
+    _VALIDATION_ERROR_CLS = CI360ContentDeliveryValidationError
 
-        Args:
-            config: Configuration object for CI360 Content Delivery operations
-
-        Raises:
-            CI360ContentDeliveryValidationError: If required configuration is missing
-        """
-        self.config = config or CI360ContentDeliveryConfig()
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-        # Validate configuration
-        self._validate_config()
-
-        # Initialize HTTP session with retry strategy
-        self.session = self._create_session()
-
-        # Generate authentication token
-        self.token = self._generate_token()
-
-        # Connection state
-        self._connected = False
-
-        self.logger.info("CI360 Content Delivery Base initialized successfully")
-
-    def _validate_config(self) -> None:
-        """Validate configuration parameters."""
-        required_fields = ['host', 'secret_key', 'tenant_id']
-        missing = [field for field in required_fields if not getattr(self.config, field)]
-
-        if missing:
-            raise CI360ContentDeliveryValidationError(f"Missing required configuration: {', '.join(missing)}")
-
-        # Validate algorithm
-        supported_algorithms = ['HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512']
-        if self.config.algorithm not in supported_algorithms:
-            raise CI360ContentDeliveryValidationError(f"Unsupported algorithm: {self.config.algorithm}")
-
-        # Validate file size limit
+    def _validate_extra_config(self) -> None:
         if self.config.max_file_size_mb <= 0:
             raise CI360ContentDeliveryValidationError("max_file_size_mb must be positive")
-
-    def _create_session(self) -> requests.Session:
-        """Create HTTP session with retry strategy."""
-        session = requests.Session()
-
-        # Configure retry strategy
-        retry_strategy = Retry(
-            total=self.config.max_retries,
-            backoff_factor=self.config.retry_backoff,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-
-        return session
-
-    def _generate_token(self) -> str:
-        """Generate JWT authentication token."""
-        try:
-            # Import here to avoid circular imports
-            from sasci360apicore.encryption import Encryption
-
-            encryption = Encryption(
-                algorithm=self.config.algorithm,
-                encoding=self.config.encoding
-            )
-
-            return encryption.generate_jwt(
-                tenant_id=self.config.tenant_id,
-                secret_key=self.config.secret_key
-            )
-        except Exception as e:
-            raise CI360ContentDeliveryAuthError(f"Failed to generate authentication token: {e}")
-
-    def get_auth_headers(self) -> Dict[str, str]:
-        """
-        Get authentication headers for API requests.
-
-        Returns:
-            Dict[str, str]: Headers dictionary with authorization token
-        """
-        return {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-Tenant-ID": str(self.config.tenant_id)
-        }
-
-    async def validate_connection_async(self) -> bool:
-        """
-        Asynchronously validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # Basic health check endpoint; config.host is validated non-None in __init__
-            assert self.config.host is not None
-            health_url = urljoin(self.config.host, "/health")
-            headers = self.get_auth_headers()
-
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.get(
-                    health_url,
-                    headers=headers,
-                    timeout=self.config.timeout
-                )
-            )
-
-            self._connected = response.status_code == 200
-            return self._connected
-
-        except Exception as e:
-            self.logger.error(f"Connection validation failed: {e}")
-            self._connected = False
-            return False
-
-    def validate_connection(self) -> bool:
-        """
-        Validate connection to CI360 service.
-
-        Returns:
-            bool: True if connection is valid
-        """
-        try:
-            # Run async validation in sync context
-            return asyncio.run(self.validate_connection_async())
-        except Exception as e:
-            self.logger.error(f"Sync connection validation failed: {e}")
-            return False
-
-    async def _make_request_async(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make asynchronous HTTP request to CI360 API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-
-        Raises:
-            CI360ContentDeliveryConnectionError: For network/connection errors
-            CI360ContentDeliveryAuthError: For authentication errors
-        """
-        if not self._connected:
-            await self.validate_connection_async()
-            if not self._connected:
-                raise CI360ContentDeliveryConnectionError("No active connection to CI360 service")
-
-        assert self.config.host is not None  # validated non-None in __init__
-        url = f"{self.config.host.rstrip('/')}{self.config.api_base}/{endpoint.lstrip('/')}"
-        headers = self.get_auth_headers()
-
-        try:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                    params=params,
-                    timeout=self.config.timeout
-                )
-            )
-
-            response.raise_for_status()
-            return response.json() if response.content else {}
-
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 401:
-                raise CI360ContentDeliveryAuthError(f"Authentication failed: {e}")
-            elif response.status_code >= 500:
-                raise CI360ContentDeliveryConnectionError(f"Server error: {e}")
-            else:
-                raise CI360ContentDeliveryError(f"API request failed: {e}")
-        except requests.exceptions.RequestException as e:
-            raise CI360ContentDeliveryConnectionError(f"Network error: {e}")
-
-    def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Make synchronous HTTP request to CI360 API.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Request body data
-            params: Query parameters
-
-        Returns:
-            Dict[str, Any]: Response data
-        """
-        try:
-            return asyncio.run(self._make_request_async(method, endpoint, data, params))
-        except Exception as e:
-            self.logger.error(f"Request failed: {e}")
-            raise
 
     # Digital Asset Management APIs
 
@@ -372,7 +147,6 @@ class CI360ContentDeliveryBase:
         """
         # For file uploads, we'd typically use multipart/form-data
         # This is a simplified implementation - in practice, you'd use requests-toolbelt or similar
-        import io
         from requests_toolbelt.multipart.encoder import MultipartEncoder
 
         # Create multipart form data
@@ -385,8 +159,7 @@ class CI360ContentDeliveryBase:
         headers = self.get_auth_headers()
         headers['Content-Type'] = encoder.content_type
 
-        assert self.config.host is not None  # validated non-None in __init__
-        url = f"{self.config.host.rstrip('/')}{self.config.api_base}/assets/upload"
+        url = f"{self._base_url}/assets/upload"
 
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
@@ -644,23 +417,3 @@ class CI360ContentDeliveryBase:
             params["endDate"] = end_date
 
         return self._make_request("GET", "/analytics/content", params=params)
-
-    def __enter__(self):
-        """Context manager entry."""
-        if not self.validate_connection():
-            raise CI360ContentDeliveryConnectionError("Failed to establish connection")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.session.close()
-
-    async def __aenter__(self):
-        """Async context manager entry."""
-        if not await self.validate_connection_async():
-            raise CI360ContentDeliveryConnectionError("Failed to establish connection")
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        self.session.close()

@@ -68,8 +68,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_initialization_success(self, mock_request, mock_encryption_class, mock_session_class):
         """Test successful initialization."""
@@ -85,8 +85,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
     # Digital Asset Management Tests
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_assets_async_merges_filters_into_params(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"assets": [], "total": 0}
@@ -98,8 +98,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
             "GET", "/assets", params={"limit": 30, "offset": 60, "format": "jpg"}
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_assets_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async asset retrieval."""
@@ -114,8 +114,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
             params={"limit": 30, "offset": 60}
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_asset_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async single asset retrieval."""
@@ -135,8 +135,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
         self.assertEqual(result["name"], "Holiday Banner 2025")
         mock_request.assert_called_once_with("GET", "/assets/asset-123")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_update_asset_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async asset update."""
@@ -149,8 +149,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
         self.assertEqual(result["name"], "Updated Banner Name")
         mock_request.assert_called_once_with("PUT", "/assets/asset-123", data=update_data)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_delete_asset_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async asset deletion."""
@@ -164,8 +164,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
     # Content Delivery Tests
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_deliver_content_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async content delivery."""
@@ -188,8 +188,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
         expected_payload = {"assetId": "asset-123", "deliveryConfig": delivery_config}
         mock_request.assert_called_once_with("POST", "/delivery/send", data=expected_payload)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_delivery_status_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async delivery status retrieval."""
@@ -207,8 +207,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         mock_request.assert_called_once_with("GET", "/delivery/del-789")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_deliveries_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async delivery listing."""
@@ -223,8 +223,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
     # Content Template Tests
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_content_templates_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async content template retrieval."""
@@ -237,8 +237,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
         expected_params = {"category": "email", "limit": 15, "offset": 0}
         mock_request.assert_called_once_with("GET", "/templates/content", params=expected_params)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_create_content_from_template_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async content creation from template."""
@@ -262,8 +262,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
     # Content Analytics Tests
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_content_analytics_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async content analytics retrieval."""
@@ -293,8 +293,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
     # Synchronous method tests
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_assets_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous asset retrieval."""
@@ -305,8 +305,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
         self.assertEqual(result["total"], 0)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_update_asset_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous asset update."""
@@ -318,8 +318,8 @@ class TestCI360ContentDeliveryBase(unittest.TestCase):
 
         self.assertEqual(result["name"], "Updated Asset")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_deliver_content_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous content delivery."""
@@ -343,8 +343,8 @@ class TestCI360ContentDeliveryErrorHandling(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_validation_error_handling(self, mock_request, mock_encryption_class, mock_session_class):
         """Test validation error handling."""
@@ -401,8 +401,8 @@ class TestCI360ContentDeliveryAuth(unittest.TestCase):
             tenant_id="test-tenant-id",
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_auth_headers_includes_bearer_token_and_tenant(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
 
@@ -413,8 +413,8 @@ class TestCI360ContentDeliveryAuth(unittest.TestCase):
         self.assertEqual(headers["X-Tenant-ID"], "test-tenant-id")
         self.assertEqual(headers["Content-Type"], "application/json")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_generate_token_wraps_any_failure_as_auth_error(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.side_effect = RuntimeError("bad key")
 
@@ -436,8 +436,8 @@ class TestCI360ContentDeliveryConnectionValidation(unittest.TestCase):
             tenant_id="test-tenant-id",
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_true_on_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -451,8 +451,8 @@ class TestCI360ContentDeliveryConnectionValidation(unittest.TestCase):
         called_kwargs = mock_session.get.call_args.kwargs
         self.assertEqual(called_kwargs["timeout"], self.config.timeout)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_on_non_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=503)
@@ -463,8 +463,8 @@ class TestCI360ContentDeliveryConnectionValidation(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(client._connected)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_when_session_raises(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.side_effect = requests.exceptions.ConnectionError("refused")
@@ -474,8 +474,8 @@ class TestCI360ContentDeliveryConnectionValidation(unittest.TestCase):
 
         self.assertFalse(result)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=200)
@@ -484,9 +484,9 @@ class TestCI360ContentDeliveryConnectionValidation(unittest.TestCase):
 
         self.assertTrue(client.validate_connection())
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
-    @patch('sasci360solcontentdelivery.base.asyncio.run')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
+    @patch('sasci360apicore.rest_client.asyncio.run')
     def test_validate_connection_sync_false_when_asyncio_run_raises(
         self, mock_asyncio_run, mock_encryption_class, mock_session_class
     ):
@@ -516,8 +516,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         client._connected = True  # bypass the auto-reconnect path for these tests
         return client, mock_session_class.return_value
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_returns_parsed_json_on_success(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(content=b'{"ok": true}')
@@ -533,8 +533,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         # when host has no trailing slash (same bug class fixed in sol-planning).
         self.assertEqual(called_kwargs["url"], "https://api.example.com/digital-assets/assets")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_returns_empty_dict_when_no_content(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         mock_session.request.return_value = Mock(content=b"")
@@ -543,8 +543,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
 
         self.assertEqual(result, {})
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_reconnects_when_not_connected(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         client = CI360ContentDeliveryBase(self.config)  # _connected starts False
@@ -559,8 +559,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         self.assertEqual(result, {"ok": True})
         mock_session.get.assert_called_once()  # the reconnect health check happened
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_raises_connection_error_when_reconnect_fails(
         self, mock_encryption_class, mock_session_class
     ):
@@ -571,8 +571,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         with self.assertRaises(CI360ContentDeliveryConnectionError):
             asyncio.run(client._make_request_async("GET", "/assets"))
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_401_raises_auth_error(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(status_code=401)
@@ -582,8 +582,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         with self.assertRaises(CI360ContentDeliveryAuthError):
             asyncio.run(client._make_request_async("GET", "/assets"))
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_5xx_raises_connection_error(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(status_code=503)
@@ -593,8 +593,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         with self.assertRaises(CI360ContentDeliveryConnectionError):
             asyncio.run(client._make_request_async("GET", "/assets"))
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_other_4xx_raises_generic_error(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(status_code=404)
@@ -604,8 +604,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         with self.assertRaises(CI360ContentDeliveryError):
             asyncio.run(client._make_request_async("GET", "/assets"))
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_network_error_raises_connection_error(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         mock_session.request.side_effect = requests.exceptions.ConnectionError("refused")
@@ -613,8 +613,8 @@ class TestCI360ContentDeliveryMakeRequest(unittest.TestCase):
         with self.assertRaises(CI360ContentDeliveryConnectionError):
             asyncio.run(client._make_request_async("GET", "/assets"))
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_make_request_sync_logs_and_reraises(self, mock_request_async, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
@@ -636,8 +636,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
             tenant_id="test-tenant-id",
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_assets_sync_merges_filters_into_params(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"assets": [], "total": 0}
@@ -649,8 +649,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
             "GET", "/assets", None, {"limit": 30, "offset": 60, "format": "jpg"}
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_asset_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "asset-1"}
@@ -661,8 +661,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
         self.assertEqual(result["id"], "asset-1")
         mock_request.assert_called_once_with("GET", "/assets/asset-1", None, None)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_delete_asset_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -671,8 +671,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
         self.assertTrue(client.delete_asset("asset-1"))
         mock_request.assert_called_once_with("DELETE", "/assets/asset-1", None, None)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_deliveries_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"deliveries": []}
@@ -685,8 +685,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
             "GET", "/delivery", None, {"limit": 50, "offset": 0, "status": "failed"}
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_delivery_status_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"status": "sent"}
@@ -697,8 +697,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
         self.assertEqual(result["status"], "sent")
         mock_request.assert_called_once_with("GET", "/delivery/del-1", None, None)
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_content_templates_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"templates": []}
@@ -711,8 +711,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
             "GET", "/templates/content", None, {"limit": 50, "offset": 0, "category": "email"}
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_create_content_from_template_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "content-1"}
@@ -726,8 +726,8 @@ class TestCI360ContentDeliverySyncWrappers(unittest.TestCase):
             {"templateId": "tmpl-1", "contentData": {"subject": "Hi"}}, None,
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360solcontentdelivery.base.CI360ContentDeliveryBase._make_request_async')
     def test_get_content_analytics_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"totalViews": 10}
@@ -753,8 +753,8 @@ class TestCI360ContentDeliveryUpload(unittest.TestCase):
             tenant_id="test-tenant-id",
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_asset_async_posts_multipart_and_returns_json(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -772,8 +772,8 @@ class TestCI360ContentDeliveryUpload(unittest.TestCase):
         # too, since an absolute-path reference always replaces the whole path.
         self.assertEqual(called_args[0], "https://api.example.com/digital-assets/assets/upload")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_asset_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -786,8 +786,8 @@ class TestCI360ContentDeliveryUpload(unittest.TestCase):
 
         self.assertEqual(result["id"], "asset-new")
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_asset_sync_logs_and_reraises_on_failure(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.post.side_effect = requests.exceptions.ConnectionError("refused")
@@ -808,8 +808,8 @@ class TestCI360ContentDeliveryContextManagers(unittest.TestCase):
             tenant_id="test-tenant-id",
         )
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_success(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -819,8 +819,8 @@ class TestCI360ContentDeliveryContextManagers(unittest.TestCase):
             self.assertTrue(client._connected)
         mock_session.close.assert_called_once()
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=503)
@@ -829,8 +829,8 @@ class TestCI360ContentDeliveryContextManagers(unittest.TestCase):
             with CI360ContentDeliveryBase(self.config):
                 pass
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_async_context_manager_success(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -843,8 +843,8 @@ class TestCI360ContentDeliveryContextManagers(unittest.TestCase):
         self.assertTrue(asyncio.run(_run()))
         mock_session.close.assert_called_once()
 
-    @patch('sasci360solcontentdelivery.base.requests.Session')
-    @patch('sasci360apicore.encryption.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_async_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=503)
