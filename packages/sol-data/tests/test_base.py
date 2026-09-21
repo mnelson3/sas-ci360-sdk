@@ -57,8 +57,8 @@ class TestCI360DataBase(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_initialization_success(self, mock_encryption_class, mock_session_class):
         """Test successful initialization."""
         mock_encryption = Mock()
@@ -89,16 +89,16 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataError):
             CI360DataBase(config)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption', None)
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption', None)
     def test_generate_token_raises_auth_error_when_encryption_unavailable(self, mock_session_class):
         """_generate_token must raise a clear error when sasci360apicore isn't installed."""
         from sasci360soldata.base import CI360DataAuthError
         with self.assertRaises(CI360DataAuthError):
             CI360DataBase(self.config)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_generate_token_wraps_any_failure_as_auth_error(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataAuthError
         mock_encryption_class.return_value.generate_jwt.side_effect = RuntimeError("bad key")
@@ -106,8 +106,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataAuthError):
             CI360DataBase(self.config)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_auth_headers(self, mock_encryption_class, mock_session_class):
         """Test authentication headers generation."""
         mock_encryption = Mock()
@@ -125,8 +125,8 @@ class TestCI360DataBase(unittest.TestCase):
         }
         self.assertEqual(headers, expected_headers)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase.validate_connection_async')
     def test_validate_connection_async_success(self, mock_validate, mock_encryption_class, mock_session_class):
         """Test successful async connection validation."""
@@ -138,8 +138,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertTrue(result)
         mock_validate.assert_called_once()
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase.validate_connection_async')
     def test_validate_connection_async_failure(self, mock_validate, mock_encryption_class, mock_session_class):
         """Test failed async connection validation."""
@@ -159,8 +159,8 @@ class TestCI360DataBase(unittest.TestCase):
     # existing test in this file reaches (every one above mocks
     # _make_request_async or validate_connection[_async] itself).
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_true_on_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=200)
@@ -171,8 +171,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertTrue(result)
         self.assertTrue(client._connected)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_on_non_200(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=503)
@@ -183,8 +183,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(client._connected)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_async_false_when_session_raises(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.side_effect = ConnectionError("refused")
@@ -193,8 +193,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         self.assertFalse(asyncio.run(client.validate_connection_async()))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_validate_connection_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session_class.return_value.get.return_value = Mock(status_code=200)
@@ -209,8 +209,8 @@ class TestCI360DataBase(unittest.TestCase):
         client._connected = True
         return client, mock_session_class.return_value
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_returns_parsed_json_on_success(self, mock_encryption_class, mock_session_class):
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
         response = Mock(content=b'{"ok": true}')
@@ -221,8 +221,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         self.assertEqual(result, {"ok": True})
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_reconnects_when_not_connected(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         client = CI360DataBase(self.config)  # _connected starts False
@@ -237,8 +237,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result, {"ok": True})
         mock_session.get.assert_called_once()
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_raises_connection_error_when_reconnect_fails(
         self, mock_encryption_class, mock_session_class
     ):
@@ -250,8 +250,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataConnectionError):
             asyncio.run(client._make_request_async("GET", "/customers"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_401_raises_auth_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360soldata.base import CI360DataAuthError
@@ -263,8 +263,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataAuthError):
             asyncio.run(client._make_request_async("GET", "/customers"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_5xx_raises_connection_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360soldata.base import CI360DataConnectionError
@@ -276,8 +276,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataConnectionError):
             asyncio.run(client._make_request_async("GET", "/customers"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_other_4xx_raises_generic_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         client, mock_session = self._connected_client(mock_encryption_class, mock_session_class)
@@ -288,8 +288,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataError):
             asyncio.run(client._make_request_async("GET", "/customers"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_network_error_raises_connection_error(self, mock_encryption_class, mock_session_class):
         import requests as requests_module
         from sasci360soldata.base import CI360DataConnectionError
@@ -299,9 +299,9 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataConnectionError):
             asyncio.run(client._make_request_async("GET", "/customers"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
-    @patch('sasci360soldata.base.asyncio.run')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
+    @patch('sasci360apicore.rest_client.asyncio.run')
     def test_validate_connection_sync_false_when_asyncio_run_raises(
         self, mock_asyncio_run, mock_encryption_class, mock_session_class
     ):
@@ -311,8 +311,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         self.assertFalse(client.validate_connection())
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_make_request_sync_logs_and_reraises(self, mock_request_async, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataConnectionError
@@ -323,8 +323,8 @@ class TestCI360DataBase(unittest.TestCase):
         with self.assertRaises(CI360DataConnectionError):
             client._make_request("GET", "/customers")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_success(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_session = mock_session_class.return_value
@@ -334,8 +334,8 @@ class TestCI360DataBase(unittest.TestCase):
             self.assertTrue(client._connected)
         mock_session.close.assert_called_once()
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_sync_context_manager_raises_when_connection_fails(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataConnectionError
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
@@ -345,8 +345,8 @@ class TestCI360DataBase(unittest.TestCase):
             with CI360DataBase(self.config):
                 pass
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customers_async_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"customers": []}
@@ -358,8 +358,8 @@ class TestCI360DataBase(unittest.TestCase):
             "GET", "/customers", params={"limit": 100, "offset": 0, "status": "active"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customers_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async customer retrieval."""
@@ -374,8 +374,8 @@ class TestCI360DataBase(unittest.TestCase):
             params={"limit": 10, "offset": 5}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customer_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async single customer retrieval."""
@@ -387,8 +387,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result, {"id": "123", "name": "John Doe"})
         mock_request.assert_called_once_with("GET", "/customers/123")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_customer_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async customer creation."""
@@ -401,8 +401,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result, {"id": "123", **customer_data})
         mock_request.assert_called_once_with("POST", "/customers", data=customer_data)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_customer_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async customer update."""
@@ -415,8 +415,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result["name"], "Jane Doe")
         mock_request.assert_called_once_with("PUT", "/customers/123", data=update_data)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_delete_customer_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async customer deletion."""
@@ -428,8 +428,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertTrue(result)
         mock_request.assert_called_once_with("DELETE", "/customers/123")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_segments_async_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"segments": []}
@@ -441,8 +441,8 @@ class TestCI360DataBase(unittest.TestCase):
             "GET", "/segments", params={"limit": 100, "offset": 0, "active": True}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_segments_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async segment retrieval."""
@@ -457,8 +457,8 @@ class TestCI360DataBase(unittest.TestCase):
             params={"limit": 20, "offset": 10}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_segment_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async segment creation."""
@@ -471,8 +471,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result["name"], "High Value Customers")
         mock_request.assert_called_once_with("POST", "/segments", data=segment_data)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_import_data_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async data import."""
@@ -486,8 +486,8 @@ class TestCI360DataBase(unittest.TestCase):
         expected_payload = {"data": data, "dataType": "customers"}
         mock_request.assert_called_once_with("POST", "/import", data=expected_payload)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_export_data_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async data export."""
@@ -500,8 +500,8 @@ class TestCI360DataBase(unittest.TestCase):
         expected_params = {"dataType": "customers", "format": "json", "segmentId": "seg-123"}
         mock_request.assert_called_once_with("GET", "/export", params=expected_params)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_validate_data_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async data validation."""
@@ -514,8 +514,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertIn("Invalid email format", result["errors"])
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_schema_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async schema retrieval."""
@@ -528,8 +528,8 @@ class TestCI360DataBase(unittest.TestCase):
         self.assertEqual(result, schema)
         mock_request.assert_called_once_with("GET", "/schema", params={"dataType": "customers"})
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_schema_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async schema update."""
@@ -545,8 +545,8 @@ class TestCI360DataBase(unittest.TestCase):
 
     # Synchronous method tests
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customers_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous customer retrieval."""
@@ -557,8 +557,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         self.assertEqual(result, {"customers": [], "total": 0})
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_customer_sync(self, mock_request, mock_encryption_class, mock_session_class):
         """Test synchronous customer creation."""
@@ -572,8 +572,8 @@ class TestCI360DataBase(unittest.TestCase):
 
     # Context manager tests
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase.validate_connection')
     def test_context_manager_sync(self, mock_validate, mock_encryption_class, mock_session_class):
         """Test synchronous context manager."""
@@ -588,8 +588,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         mock_session.close.assert_called_once()
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase.validate_connection_async')
     def test_context_manager_async(self, mock_validate, mock_encryption_class, mock_session_class):
         """Test asynchronous context manager."""
@@ -606,8 +606,8 @@ class TestCI360DataBase(unittest.TestCase):
 
         asyncio.run(test_async_context())
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase.validate_connection_async')
     def test_context_manager_async_raises_when_connection_fails(
         self, mock_validate, mock_encryption_class, mock_session_class
@@ -639,8 +639,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_connection_error_handling(self, mock_request, mock_encryption_class, mock_session_class):
         """Test connection error handling."""
@@ -652,8 +652,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         with self.assertRaises(CI360DataConnectionError):
             asyncio.run(client.get_customers_async())
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_auth_error_handling(self, mock_request, mock_encryption_class, mock_session_class):
         """Test authentication error handling."""
@@ -665,8 +665,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         with self.assertRaises(CI360DataAuthError):
             asyncio.run(client.get_customers_async())
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_import_request_jobs_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async import request job listing."""
@@ -681,8 +681,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             params={"start": 0, "limit": 999, "dataDescriptorId": "abc-123"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_import_request_jobs_async_no_filter(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async import request job listing without a data_descriptor_id filter."""
@@ -696,8 +696,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             params={"start": 0, "limit": 999}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_import_request_job_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async import request job creation."""
@@ -710,8 +710,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result, {"id": "job-1", **payload})
         mock_request.assert_called_once_with("POST", "/importRequestJobs", data=payload)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_import_request_job_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async single import request job retrieval."""
@@ -723,8 +723,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result, {"id": "job-1", "dataDescriptorId": "abc-123"})
         mock_request.assert_called_once_with("GET", "/importRequestJobs/job-1")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_import_request_job_missing_id(self, mock_encryption_class, mock_session_class):
         """Test that a missing import_request_job_id raises validation error."""
         client = CI360DataBase(self.config)
@@ -732,8 +732,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         with self.assertRaises(CI360DataError):
             asyncio.run(client.get_import_request_job_async(""))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_file_transfer_location_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async file transfer location creation."""
@@ -745,8 +745,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result, {"signedURL": "https://example.com/signed-upload"})
         mock_request.assert_called_once_with("POST", "/fileTransferLocation")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_to_signed_url_async(self, mock_encryption_class, mock_session_class):
         """Test uploading a file to a signed URL."""
         mock_response = Mock()
@@ -766,8 +766,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(call_args[0][0], "https://example.com/signed-upload")
         self.assertEqual(call_args[1]["data"], b"col1,col2\n1,2\n")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_to_signed_url_async_failure(self, mock_encryption_class, mock_session_class):
         """Test that a failed upload raises CI360DataConnectionError."""
         from sasci360soldata.base import CI360DataConnectionError
@@ -781,8 +781,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             with self.assertRaises(CI360DataConnectionError):
                 asyncio.run(client.upload_to_signed_url_async("https://example.com/signed-upload", "/tmp/export.csv"))
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_tables_async_with_type_filter(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"items": []}
@@ -794,8 +794,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             "GET", "/tables", params={"start": 0, "limit": 100, "type": "standard"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_tables_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async table listing."""
@@ -810,8 +810,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
             params={"start": 0, "limit": 100, "name": "identityBridge"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_table_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async single table retrieval."""
@@ -823,8 +823,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result, {"id": "table-1", "name": "identityBridge"})
         mock_request.assert_called_once_with("GET", "/tables/table-1")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_table_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async table creation."""
@@ -837,8 +837,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result, {"id": "table-2", **payload})
         mock_request.assert_called_once_with("POST", "/tableJobs", data=payload)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_table_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async table update."""
@@ -851,8 +851,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertEqual(result["name"], "renamedTable")
         mock_request.assert_called_once_with("PATCH", "/tableJobs/table-1", data=payload)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_delete_table_async(self, mock_request, mock_encryption_class, mock_session_class):
         """Test async table deletion."""
@@ -864,8 +864,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
         self.assertTrue(result)
         mock_request.assert_called_once_with("DELETE", "/tables/table-1")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_delete_table_missing_id(self, mock_encryption_class, mock_session_class):
         """Test that a missing table_id raises validation error."""
         client = CI360DataBase(self.config)
@@ -884,8 +884,8 @@ class TestCI360DataErrorHandling(unittest.TestCase):
     # sol-content-delivery). This test mocks one level deeper (the
     # session's own .request call) to pin down the actual URL requested.
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_make_request_async_includes_api_base_in_url(self, mock_encryption_class, mock_session_class):
         """_make_request_async must build a URL under config.api_base, not just config.host."""
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
@@ -917,8 +917,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             tenant_id="test-tenant-id"
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customers_sync_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"customers": []}
@@ -930,8 +930,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "GET", "/customers", None, {"limit": 10, "offset": 5, "status": "active"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_customer_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "123"}
@@ -942,8 +942,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertEqual(result["id"], "123")
         mock_request.assert_called_once_with("GET", "/customers/123", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_customer_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "123", "name": "Jane"}
@@ -954,8 +954,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertEqual(result["name"], "Jane")
         mock_request.assert_called_once_with("PUT", "/customers/123", {"name": "Jane"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_delete_customer_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -964,8 +964,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertTrue(client.delete_customer("123"))
         mock_request.assert_called_once_with("DELETE", "/customers/123", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_segments_sync_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"segments": []}
@@ -977,8 +977,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "GET", "/segments", None, {"limit": 20, "offset": 10, "active": True}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_segment_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "seg-1"}
@@ -990,8 +990,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         client.get_segment("seg-1")
         mock_request.assert_called_with("GET", "/segments/seg-1", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_segment_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "seg-1"}
@@ -1001,8 +1001,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("POST", "/segments", {"name": "VIPs"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_segment_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "seg-1", "name": "Renamed"}
@@ -1014,8 +1014,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         client.update_segment("seg-1", {"name": "Renamed"})
         mock_request.assert_called_with("PUT", "/segments/seg-1", {"name": "Renamed"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_delete_segment_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -1027,8 +1027,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertTrue(client.delete_segment("seg-1"))
         mock_request.assert_called_with("DELETE", "/segments/seg-1", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_import_data_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"imported": 1}
@@ -1040,8 +1040,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "POST", "/import", {"data": [{"name": "John"}], "dataType": "customers"}, None
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_export_data_sync_merges_filters(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"exportId": "exp-1"}
@@ -1053,8 +1053,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "GET", "/export", None, {"dataType": "customers", "format": "csv", "segmentId": "seg-1"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_validate_data_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"valid": True}
@@ -1067,8 +1067,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "POST", "/validate", {"data": [{"name": "John"}], "dataType": "customers"}, None
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_schema_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"type": "object"}
@@ -1078,8 +1078,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("GET", "/schema", None, {"dataType": "customers"})
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_schema_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"type": "object"}
@@ -1091,8 +1091,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "PUT", "/schema", {"dataType": "customers", "schema": {"type": "object"}}, None
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_import_request_jobs_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"items": []}
@@ -1104,8 +1104,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "GET", "/importRequestJobs", None, {"start": 0, "limit": 999, "dataDescriptorId": "abc"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_import_request_job_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "job-1"}
@@ -1115,8 +1115,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("POST", "/importRequestJobs", {"dataDescriptorId": "abc"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_import_request_job_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "job-1"}
@@ -1126,8 +1126,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("GET", "/importRequestJobs/job-1", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_import_request_job_sync_missing_id(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataValidationError
         client = CI360DataBase(self.config)
@@ -1135,8 +1135,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         with self.assertRaises(CI360DataValidationError):
             client.get_import_request_job("")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_file_transfer_location_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"signedURL": "https://example.com/signed"}
@@ -1147,8 +1147,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertEqual(result["signedURL"], "https://example.com/signed")
         mock_request.assert_called_once_with("POST", "/fileTransferLocation", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_upload_to_signed_url_sync_delegates_to_async(self, mock_encryption_class, mock_session_class):
         mock_encryption_class.return_value.generate_jwt.return_value = "test-token"
         mock_response = Mock(content=b"")
@@ -1162,8 +1162,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         self.assertTrue(result)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_tables_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"items": []}
@@ -1175,8 +1175,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
             "GET", "/tables", None, {"start": 0, "limit": 100, "name": "t", "type": "std"}
         )
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_get_table_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "table-1"}
@@ -1186,8 +1186,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("GET", "/tables/table-1", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_get_table_missing_id(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataValidationError
         client = CI360DataBase(self.config)
@@ -1197,8 +1197,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         with self.assertRaises(CI360DataValidationError):
             client.get_table("")
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_create_table_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "table-1"}
@@ -1208,8 +1208,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
 
         mock_request.assert_called_once_with("POST", "/tableJobs", {"name": "t"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_update_table_async_and_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = {"id": "table-1", "name": "renamed"}
@@ -1221,8 +1221,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         client.update_table("table-1", {"name": "renamed"})
         mock_request.assert_called_with("PATCH", "/tableJobs/table-1", {"name": "renamed"}, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_update_table_missing_id(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataValidationError
         client = CI360DataBase(self.config)
@@ -1232,8 +1232,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         with self.assertRaises(CI360DataValidationError):
             client.update_table("", {"name": "x"})
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     @patch('sasci360soldata.base.CI360DataBase._make_request_async')
     def test_delete_table_sync(self, mock_request, mock_encryption_class, mock_session_class):
         mock_request.return_value = None
@@ -1242,8 +1242,8 @@ class TestCI360DataSyncWrappersAndFilters(unittest.TestCase):
         self.assertTrue(client.delete_table("table-1"))
         mock_request.assert_called_once_with("DELETE", "/tables/table-1", None, None)
 
-    @patch('sasci360soldata.base.requests.Session')
-    @patch('sasci360soldata.base.Encryption')
+    @patch('sasci360apicore.rest_client.requests.Session')
+    @patch('sasci360apicore.rest_client.Encryption')
     def test_delete_table_sync_missing_id(self, mock_encryption_class, mock_session_class):
         from sasci360soldata.base import CI360DataValidationError
         client = CI360DataBase(self.config)
