@@ -12,112 +12,97 @@ from typing import Optional
 
 
 class Communication:
-	"""
-	Communication Module
-	Contains operations to send emails
-		1. 	def send_email(self, **kwargs) -> None
-	"""
+    """
+    Communication Module
+    Contains operations to send emails
+            1. 	def send_email(self, **kwargs) -> None
+    """
 
-	def __init__(self, **kwargs) -> None:
-		"""
+    def __init__(self, **kwargs) -> None:
+        """
 
-		:keyword email_server:
-		:keyword email_server_login:
-		:keyword email_server_password:
-		:keyword email_server_port:
+        :keyword email_server:
+        :keyword email_server_login:
+        :keyword email_server_password:
+        :keyword email_server_port:
 
-		"""
-		self.logger = logging.getLogger(__name__)
+        """
+        self.logger = logging.getLogger(__name__)
 
-		self.email_server = kwargs["email_server"]
-		self.email_server_login = kwargs["email_server_login"]
-		self.email_server_password = kwargs["email_server_password"]
-		self.email_server_port = kwargs["email_server_port"]
+        self.email_server = kwargs["email_server"]
+        self.email_server_login = kwargs["email_server_login"]
+        self.email_server_password = kwargs["email_server_password"]
+        self.email_server_port = kwargs["email_server_port"]
 
-	def send_email(self, **kwargs) -> None:
-		"""
+    def send_email(self, **kwargs) -> None:
+        """
 
-		:keyword email_msg_from:
-		:keyword email_msg_to:
-		:keyword email_msg_cc:
-		:keyword email_msg_bcc:
-		:keyword email_msg_subject:
-		:keyword email_msg_body:
-		:keyword email_msg_attachment:
+        :keyword email_msg_from:
+        :keyword email_msg_to:
+        :keyword email_msg_cc:
+        :keyword email_msg_bcc:
+        :keyword email_msg_subject:
+        :keyword email_msg_body:
+        :keyword email_msg_attachment:
 
 
-		"""
-		host = self.email_server
-		port = self.email_server_port
-		login = self.email_server_login
-		password = self.email_server_password
+        """
+        host = self.email_server
+        port = self.email_server_port
+        login = self.email_server_login
+        password = self.email_server_password
 
-		email_msg_from: Optional[str] = None
-		email_msg_to: Optional[str] = None
-		email_msg_cc: Optional[str] = None
-		email_msg_bcc: Optional[str] = None
-		email_msg_subject: Optional[str] = None
-		email_msg_body: Optional[str] = None
-		email_msg_attachment = None
-		try:
-			if "email_msg_from" in kwargs:
-				email_msg_from = kwargs["email_msg_from"]
-			if "email_msg_to" in kwargs:
-				email_msg_to = kwargs["email_msg_to"]
-			if "email_msg_cc" in kwargs:
-				email_msg_cc = kwargs["email_msg_cc"]
-			if "email_msg_bcc" in kwargs:
-				email_msg_bcc = kwargs["email_msg_bcc"]
-			if "email_msg_subject" in kwargs:
-				email_msg_subject = kwargs["email_msg_subject"]
-			if "email_msg_body" in kwargs:
-				email_msg_body = kwargs["email_msg_body"]
-			if "email_msg_attachment" in kwargs:
-				email_msg_attachment = kwargs["email_msg_attachment"]
+        email_msg_from: Optional[str] = kwargs.get("email_msg_from")
+        email_msg_to: Optional[str] = kwargs.get("email_msg_to")
+        email_msg_cc: Optional[str] = kwargs.get("email_msg_cc")
+        email_msg_bcc: Optional[str] = kwargs.get("email_msg_bcc")
+        email_msg_subject: Optional[str] = kwargs.get("email_msg_subject")
+        email_msg_body: Optional[str] = kwargs.get("email_msg_body")
+        email_msg_attachment = kwargs.get("email_msg_attachment")
+        try:
+            message = MIMEMultipart()
+            headers = (
+                ("From", email_msg_from),
+                ("To", email_msg_to),
+                ("CC", email_msg_cc),
+                ("BCC", email_msg_bcc),
+                ("Subject", email_msg_subject),
+            )
+            for header_name, header_value in headers:
+                if header_value is not None:
+                    message[header_name] = header_value
 
-			message = MIMEMultipart()
-			if email_msg_from is not None:
-				message["From"] = email_msg_from
-			if email_msg_to is not None:
-				message["To"] = email_msg_to
-			if email_msg_cc is not None:
-				message["CC"] = email_msg_cc
-			if email_msg_bcc is not None:
-				message["BCC"] = email_msg_bcc
-			if email_msg_subject is not None:
-				message["Subject"] = email_msg_subject
+            # Add body to email
+            message.attach(MIMEText(email_msg_body or "", "plain"))
 
-			# Add body to email
-			message.attach(MIMEText(email_msg_body or "", "plain"))
+            if email_msg_attachment is not None:
+                filename = email_msg_attachment
 
-			if email_msg_attachment is not None:
-				filename = email_msg_attachment
+                # Open PDF file in binary mode
+                with open(filename, "rb") as attachment:
+                    # Add file as application/octet-stream
+                    # Email client can usually download this automatically as attachment
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(attachment.read())
 
-				# Open PDF file in binary mode
-				with open(filename, "rb") as attachment:
-					# Add file as application/octet-stream
-					# Email client can usually download this automatically as attachment
-					part = MIMEBase("application", "octet-stream")
-					part.set_payload(attachment.read())
+                # Encode file in ASCII characters to send by email
+                encoders.encode_base64(part)
 
-				# Encode file in ASCII characters to send by email
-				encoders.encode_base64(part)
+                # Add header as key/value pair to attachment part
+                part.add_header("Content-Disposition", f"attachment; filename= {filename}", )
 
-				# Add header as key/value pair to attachment part
-				part.add_header("Content-Disposition", f"attachment; filename= {filename}", )
+                # Add attachment to message and convert message to string
+                message.attach(part)
 
-				# Add attachment to message and convert message to string
-				message.attach(part)
-
-			text = message.as_string()
-			context = ssl.create_default_context()
-			with smtplib.SMTP_SSL(host=host, port=port, context=context) as server:
-				server.login(login, password)
-				server.sendmail(email_msg_from or "", email_msg_to or "", text)
-			server.close()
-		except (smtplib.SMTPException, OSError) as e:
-			self.logger.exception("Exception occurred: {}".format(str(e)))
+            text = message.as_string()
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(host=host, port=port, context=context) as server:
+                server.login(login, password)
+                server.sendmail(email_msg_from or "", email_msg_to or "", text)
+            server.close()
+        except (smtplib.SMTPException, OSError) as e:
+            self.logger.exception("Exception occurred: {}".format(str(e)))
 
 
 if __name__ == "__main__":
-	Communication()
+    Communication()
