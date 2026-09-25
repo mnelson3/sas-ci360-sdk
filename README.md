@@ -1,4 +1,4 @@
-# sas-ci360-sdk
+# SAS CI360 SDK
 
 Python client libraries for [SAS Customer Intelligence 360](https://www.sas.com/en_us/software/customer-intelligence-360.html) — one independently pip-installable package per REST API category, plus the shared authentication and transport layer they all sit on.
 
