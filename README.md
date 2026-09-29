@@ -1,5 +1,17 @@
 # SAS CI360 SDK
 
+[![CI](https://github.com/mnelson3/sas-ci360-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/mnelson3/sas-ci360-sdk/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Community%201.0-orange.svg)](https://github.com/mnelson3/sas-ci360-sdk/blob/develop/LICENSE)
+
+## Contents
+
+- [Packages](#packages)
+- [Quick start](#quick-start)
+- [Testing](#testing)
+- [CI/CD](#cicd)
+- [Repository history](#repository-history)
+- [Contributing](#contributing)
+- [License, security, support](#license-security-support)
+
 Python client libraries for [SAS Customer Intelligence 360](https://www.sas.com/en_us/software/customer-intelligence-360.html) — one independently pip-installable package per REST API category, plus the shared authentication and transport layer they all sit on.
 
 > Licensed under the **Nelson Grey LLC Community License 1.0**: free for personal, educational, non-commercial-research, and commercial-evaluation use; a paid commercial license is required for production commercial use. Converts to Apache License 2.0 on **December 13, 2029**. See [LICENSE](LICENSE).
