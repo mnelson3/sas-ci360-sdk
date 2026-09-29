@@ -41,7 +41,7 @@ jobs:
           pip install pytest pytest-cov pytest-timeout
           pytest tests/ --timeout=30 --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/api-core/coverage.xml
           flags: api-core
@@ -78,7 +78,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/marketing-gateway/coverage.xml
           flags: marketing-gateway
@@ -114,7 +114,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-data/coverage.xml
           flags: sol-data
@@ -151,7 +151,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-execute/coverage.xml
           flags: sol-execute
@@ -188,7 +188,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-workflow/coverage.xml
           flags: sol-workflow
@@ -225,7 +225,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-planning/coverage.xml
           flags: sol-planning
@@ -262,7 +262,7 @@ jobs:
           pip install pytest pytest-cov
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-content-delivery/coverage.xml
           flags: sol-content-delivery
@@ -296,7 +296,7 @@ jobs:
         run: |
           pytest tests/ --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           file: packages/sol-identity/coverage.xml
           flags: sol-identity
