@@ -12,7 +12,7 @@
 # carries for the same reason. See requirements.txt for the full production
 # set (identical to this one, minus the dev-only tools below).
 pandas>=2.0.0
-PyJWT>=2.0.0
+PyJWT>=2.15.1
 requests>=2.34.2
 saspy>=5.0.0
 schedule>=1.2.2
