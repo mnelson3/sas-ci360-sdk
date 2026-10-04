@@ -3,5 +3,5 @@ PyJWT>=2.14.0
 requests>=2.34.2
 saspy>=4.2.0
 schedule>=1.2.2
-DateTime>=4.3
+DateTime>=6.0
 urllib3>=2.0.0
