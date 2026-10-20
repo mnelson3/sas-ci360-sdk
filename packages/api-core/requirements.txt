@@ -1,7 +1,7 @@
 pandas>=3.0.6
 PyJWT>=2.14.0
 requests>=2.34.2
-saspy>=4.2.0
+saspy>=5.109.3
 schedule>=1.2.2
 DateTime>=4.3
 urllib3>=2.0.0
