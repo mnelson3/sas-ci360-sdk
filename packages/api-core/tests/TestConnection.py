@@ -1,8 +1,11 @@
 #! /usr/local/bin/python3
 # -*- mode: python ; coding: utf-8 -*-
 
+import base64
 import unittest
 from unittest.mock import MagicMock, patch
+
+import jwt
 
 from sasci360apicore import connection
 from sasci360apicore import encryption
@@ -22,9 +25,6 @@ class TestConnection(unittest.TestCase):
 		self.secret_key_prod = "example-secret-key-prod"
 		self.secret_key_test = "example-secret-key-test"
 		self.secret_key_dev = "example-secret-key-dev"
-		self.prod_token = "***REMOVED***"
-		self.test_token = "***REMOVED***"
-		self.dev_token = "***REMOVED***"
 		self.external_gateway_path = "example.api.gateway.invalid"
 		self.analytic_services_controller_path = "/marketingData/analytic"
 		self.file_transfer_location_path = "/marketingData/fileTransferLocation"
@@ -37,6 +37,13 @@ class TestConnection(unittest.TestCase):
 
 	def tearDown(self):
 		pass
+
+	def assert_valid_token(self, token, secret_key, tenant_id):
+		# Verify the token by decoding it instead of comparing to a stored sample.
+		self.assertIsInstance(token, str)
+		key = base64.b64encode(bytes(secret_key, encoding=self.encoding))
+		payload = jwt.decode(token, key=key, algorithms=[self.algorithm])
+		self.assertEqual(payload, {"clientID": tenant_id})
 
 	def test_delete(self):
 		pass
@@ -55,7 +62,7 @@ class TestConnection(unittest.TestCase):
 		self.assertEqual(tenant_id, "example-tenant-id-dev")
 
 		token = self.encryption.generate_jwt(secret_key=secret_key, tenant_id=tenant_id)
-		self.assertEqual(token, self.dev_token)
+		self.assert_valid_token(token, secret_key, tenant_id)
 
 		action = "GET"
 		self.assertEqual(action, "GET")
@@ -71,7 +78,7 @@ class TestConnection(unittest.TestCase):
 			{
 				# "Accept": "application/vnd.sas.api+json",
 				"Content-Type": "application/json",
-				"Authorization": "Bearer ***REMOVED***"
+				"Authorization": "Bearer {0}".format(token)
 			}
 		)
 		params = None
@@ -97,7 +104,7 @@ class TestConnection(unittest.TestCase):
 		tenant_id = self.tenant_id_dev
 
 		token = self.encryption.generate_jwt(secret_key=secret_key, tenant_id=tenant_id)
-		self.assertEqual(token, self.dev_token)
+		self.assert_valid_token(token, secret_key, tenant_id)
 
 		action = "POST"
 		self.assertEqual(action, "POST")
@@ -112,7 +119,7 @@ class TestConnection(unittest.TestCase):
 			headers, {
 				"Accept": "application/json",
 				"Content-Type": "application/json",
-				"Authorization": "Bearer ***REMOVED***"
+				"Authorization": "Bearer {0}".format(token)
 			}
 		)
 		params = None
