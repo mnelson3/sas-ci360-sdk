@@ -17,7 +17,7 @@ jobs:
         working-directory: packages/api-core
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -54,7 +54,7 @@ jobs:
         working-directory: packages/marketing-gateway
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -91,7 +91,7 @@ jobs:
         working-directory: packages/sol-data
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -127,7 +127,7 @@ jobs:
         working-directory: packages/sol-execute
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -164,7 +164,7 @@ jobs:
         working-directory: packages/sol-workflow
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -201,7 +201,7 @@ jobs:
         working-directory: packages/sol-planning
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -238,7 +238,7 @@ jobs:
         working-directory: packages/sol-content-delivery
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -275,7 +275,7 @@ jobs:
         working-directory: packages/sol-identity
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
